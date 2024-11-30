@@ -23,8 +23,24 @@ dependencies {
     implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.9.2")
     runtimeOnly("org.jetbrains.lets-plot:lets-plot-image-export:4.5.1")
 
-
     testImplementation(kotlin("test"))
+    testImplementation("io.kotest:kotest-runner-junit5:5.9.0")
+    testImplementation("io.kotest:kotest-assertions-core:5.9.0")
+    testImplementation("io.kotest:kotest-property:5.9.0")
+}
+
+tasks.create("fatJar", Jar::class) {
+    group = "build"
+    archiveClassifier.set("all")
+    from(sourceSets.main.get().output)
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    dependsOn(configurations.runtimeClasspath)
+    from({
+        configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
+    })
+    manifest {
+        attributes["Main-Class"] = "dev.mtib.aoc24.AocRunnerKt"
+    }
 }
 
 tasks.test {

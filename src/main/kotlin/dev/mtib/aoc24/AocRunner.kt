@@ -5,8 +5,6 @@ import dev.mtib.aoc24.days.AocDay
 import dev.mtib.aoc24.days.IAocDay
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.util.concurrent.Executors
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.microseconds
@@ -19,17 +17,7 @@ val logger = KotlinLogging.logger { }
 suspend fun main(args: Array<String>) {
     logger.info { "Starting AoC 2024" }
 
-    val packageName = AocDay::class.java.packageName
-    ClassLoader.getSystemClassLoader().getResourceAsStream(packageName.replace(".", "/")).use { it ->
-        val reader = BufferedReader(InputStreamReader(it))
-        reader
-            .lines()
-            .filter { it.matches(Regex("""AocDay\d+\.class""")) }
-            .forEach { dayClassName ->
-                val k = Class.forName(packageName + "." + dayClassName.removeSuffix(".class"))
-                logger.debug { "Loaded $k" }
-            }
-    }
+    AocDay.load()
     val day = args.firstOrNull()?.toIntOrNull()
     if (day == null) {
         logger.error { "No day provided" }

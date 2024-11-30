@@ -2,6 +2,7 @@ package dev.mtib.aoc24.days
 
 import arrow.core.Option
 import arrow.core.toOption
+import io.github.oshai.kotlinlogging.KotlinLogging
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.time.ZoneId
@@ -22,11 +23,24 @@ open class AocDay(
 
     companion object {
         private val solutions = mutableMapOf<Int, IAocDay>()
+        private val logger = KotlinLogging.logger {}
 
         fun get(day: Int): Option<IAocDay> = solutions[day].toOption()
 
         fun getReleaseTime(day: Int): ZonedDateTime {
             return ZonedDateTime.of(2024, 12, day, 0, 0, 0, 0, ZoneId.of("UTC-5"))
+        }
+
+        fun load() {
+            val packageName = AocDay::class.java.packageName
+            (1..25).forEach {
+                try {
+                    Class.forName("$packageName.AocDay${it.toString().padStart(2, '0')}")
+                    logger.trace { "Day $it loaded" }
+                } catch (e: ClassNotFoundException) {
+                    logger.trace { "Day $it not found" }
+                }
+            }
         }
     }
 
