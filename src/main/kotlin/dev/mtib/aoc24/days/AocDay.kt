@@ -5,6 +5,7 @@ import arrow.core.toOption
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.reflections.Reflections
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -24,31 +25,26 @@ open class AocDay(
     companion object {
         private val solutions = mutableMapOf<Int, IAocDay>()
         private val logger = KotlinLogging.logger {}
-
         fun get(day: Int): Option<IAocDay> = solutions[day].toOption()
-
         fun getAll(): Map<Int, IAocDay> = solutions.toList().associateBy({ it.first }, { it.second })
-
         fun getReleaseTime(day: Int): ZonedDateTime {
             return ZonedDateTime.of(2024, 12, day, 0, 0, 0, 0, ZoneId.of("UTC-5"))
         }
 
         fun load() {
             val packageName = AocDay::class.java.packageName
-            (1..25).forEach {
-                try {
-                    Class.forName("$packageName.AocDay${it.toString().padStart(2, '0')}")
-                    logger.trace { "Day $it loaded" }
-                } catch (e: ClassNotFoundException) {
-                    logger.trace { "Day $it not found" }
-                }
+
+            logger.trace { "Loading days from package $packageName" }
+
+            Reflections(packageName).getSubTypesOf(AocDay::class.java).forEach {
+                logger.trace { "Reflections found ${it.simpleName}" }
+                Class.forName(it.name) // This loads the "class" of the object, which registers itself in `solutions` during init.
             }
         }
     }
 
     val releaseTime = getReleaseTime(day)
     val inputLocation = "src/main/resources/day${day.toString().padStart(2, '0')}.txt"
-
     fun fetchInput() {
         val token = System.getenv("SESSION")
         if (token.isNullOrBlank()) {
@@ -86,7 +82,6 @@ open class AocDay(
     }
 
     val inputLines by lazy { input.lines().toTypedArray() }
-
     override suspend fun part1(): String {
         throw NotImplementedError()
     }

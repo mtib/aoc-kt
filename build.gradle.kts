@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.1.0"
     kotlin("plugin.serialization") version "2.1.0"
+    kotlin("plugin.allopen") version "2.1.0"
 }
 
 group = "dev.mtib.aoc"
@@ -20,6 +21,8 @@ dependencies {
     implementation("io.arrow-kt:arrow-core:1.2.4")
     implementation("io.arrow-kt:arrow-fx-coroutines:1.2.4")
     implementation("org.ojalgo:ojalgo:55.0.1")
+
+    implementation("org.reflections:reflections:0.10.2")
 
     implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.9.2")
     runtimeOnly("org.jetbrains.lets-plot:lets-plot-image-export:4.5.1")
