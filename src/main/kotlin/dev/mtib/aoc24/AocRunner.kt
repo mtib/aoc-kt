@@ -5,6 +5,8 @@ import dev.mtib.aoc24.days.AocDay
 import dev.mtib.aoc24.days.IAocDay
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.toList
 import java.util.concurrent.Executors
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.microseconds
@@ -13,6 +15,20 @@ import kotlin.time.measureTime
 import kotlin.time.measureTimedValue
 
 val logger = KotlinLogging.logger { }
+val startTime = System.currentTimeMillis()
+val runDataChannel = Channel<RunData>(Channel.UNLIMITED)
+
+sealed class RunData(
+    val day: Int,
+    val part: Int,
+) {
+    fun toIdentifiedPart() = IdentifiedPart(day, part)
+}
+
+class RunResult(val result: String, day: Int, part: Int) : RunData(day, part)
+class BenchmarkResult(val duration: Duration, day: Int, part: Int) : RunData(day, day)
+
+data class IdentifiedPart(val day: Int, val part: Int)
 
 suspend fun main(args: Array<String>) {
     logger.info { "Starting AoC 2024" }
@@ -47,12 +63,40 @@ suspend fun main(args: Array<String>) {
             }
         }
     }
+
+    runDataChannel.close()
+    runDataChannel.toList().groupBy { it.toIdentifiedPart() }.entries.forEach { (id, data) ->
+        val runResult = data.filterIsInstance<RunResult>().firstOrNull()
+        val benchmarkResult = data.filterIsInstance<BenchmarkResult>().firstOrNull()
+
+        Results.save(
+            Results.Result(
+                day = id.day,
+                part = id.part,
+                benchmarkMicros = benchmarkResult?.duration?.inWholeMicroseconds,
+                result = runResult?.result,
+                cookie = System.getenv("SESSION"),
+                timestamp = startTime,
+                verified = false,
+            )
+        )
+    }
 }
 
 suspend fun runResults(day: Int, part: Int, block: suspend () -> String) {
     try {
         val result = measureTimedValue { block() }
-        logger.info { "Day $day part $part: \"${result.value}\" in ${result.duration}" }
+        val knownResult = Results.findVerifiedOrNull(day, part)
+        if (knownResult != null) {
+            if (knownResult.result != result.value) {
+                logger.warn { "Day $day part $part: \"${result.value}\" does not match known result \"${knownResult.result}\" in ${result.duration}" }
+            } else {
+                logger.info { "Day $day part $part: \"${result.value}\" matches known result in ${result.duration}" }
+            }
+        } else {
+            logger.info { "Day $day part $part: \"${result.value}\" in ${result.duration}" }
+        }
+        runDataChannel.send(RunResult(result.value, day, part))
     } catch (e: NotImplementedError) {
         logger.warn { "Day $day part $part not implemented" }
     } catch (e: AocDay.DayNotReleasedException) {
@@ -88,6 +132,7 @@ suspend fun benchmark(
             }
             .toDouble()
             .microseconds
+        runDataChannel.send(BenchmarkResult(average, day, part))
         BenchmarkWindowPlotter(day, part, windowSize, durations).plot()
         logger.info { "Day $day part $part average of $average (Discord command: `/aoc_benchmark day:$day part:$part time_milliseconds:${average.inWholeMicroseconds / 1000.0}`)" }
     } catch (e: NotImplementedError) {
