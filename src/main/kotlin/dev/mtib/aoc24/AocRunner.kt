@@ -32,14 +32,50 @@ data class IdentifiedPart(val day: Int, val part: Int)
 
 suspend fun main(args: Array<String>) {
     logger.info { "Starting AoC 2024" }
-
     AocDay.load()
-    val day = args.firstOrNull()?.toIntOrNull()
-    if (day == null) {
+
+    val days = buildSet<Int> {
+        args.forEach {
+            val day = it.toIntOrNull()
+            if (day != null) {
+                add(day)
+            }
+            when (it) {
+                "all" -> addAll(AocDay.getAll().keys)
+                "latest" -> AocDay.getAll().keys.maxOrNull()?.let { add(it) }
+            }
+        }
+    }
+
+    if (days.isEmpty()) {
         logger.error { "No day provided" }
         return
     }
 
+    days.forEach { day ->
+        runDay(day)
+    }
+
+    runDataChannel.close()
+    runDataChannel.toList().groupBy { it.toIdentifiedPart() }.entries.forEach { (id, data) ->
+        val runResult = data.filterIsInstance<RunResult>().firstOrNull()
+        val benchmarkResult = data.filterIsInstance<BenchmarkResult>().firstOrNull()
+
+        Results.save(
+            Results.Result(
+                day = id.day,
+                part = id.part,
+                benchmarkMicros = benchmarkResult?.duration?.inWholeMicroseconds,
+                result = runResult?.result,
+                cookie = System.getenv("SESSION"),
+                timestamp = startTime,
+                verified = false,
+            )
+        )
+    }
+}
+
+suspend fun runDay(day: Int) {
     val aocDay = AocDay.get(day).getOrElse {
         logger.error { "Day $day not found" }
         return
@@ -62,24 +98,6 @@ suspend fun main(args: Array<String>) {
                 }
             }
         }
-    }
-
-    runDataChannel.close()
-    runDataChannel.toList().groupBy { it.toIdentifiedPart() }.entries.forEach { (id, data) ->
-        val runResult = data.filterIsInstance<RunResult>().firstOrNull()
-        val benchmarkResult = data.filterIsInstance<BenchmarkResult>().firstOrNull()
-
-        Results.save(
-            Results.Result(
-                day = id.day,
-                part = id.part,
-                benchmarkMicros = benchmarkResult?.duration?.inWholeMicroseconds,
-                result = runResult?.result,
-                cookie = System.getenv("SESSION"),
-                timestamp = startTime,
-                verified = false,
-            )
-        )
     }
 }
 

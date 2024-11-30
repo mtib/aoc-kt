@@ -27,6 +27,8 @@ open class AocDay(
 
         fun get(day: Int): Option<IAocDay> = solutions[day].toOption()
 
+        fun getAll(): Map<Int, IAocDay> = solutions.toList().associateBy({ it.first }, { it.second })
+
         fun getReleaseTime(day: Int): ZonedDateTime {
             return ZonedDateTime.of(2024, 12, day, 0, 0, 0, 0, ZoneId.of("UTC-5"))
         }

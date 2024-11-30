@@ -7,7 +7,23 @@
 SESSION="<your session cookie>" java \
   -Dorg.slf4j.simpleLogger.log.dev.mtib.aoc24.AocRunner=INFO \
   -Dorg.slf4j.simpleLogger.showThreadName=false \
-  -jar build/libs/aoc24-0.1.0-all.jar <day>
+  -jar build/libs/aoc24-0.1.0-all.jar all
+```
+
+Alternatively, to run a specific day or set of days:
+
+```bash
+# run day 5
+[...] java [...] -jar build/libs/aoc24-0.1.0-all.jar 5
+
+# run day 1, 3, 24
+[...] java [...] -jar build/libs/aoc24-0.1.0-all.jar 1 3 24
+
+# run all days
+[...] java [...] -jar build/libs/aoc24-0.1.0-all.jar all
+
+# run the latest day available
+[...] java [...] -jar build/libs/aoc24-0.1.0-all.jar latest
 ```
 
 ## How to use
@@ -15,7 +31,8 @@ SESSION="<your session cookie>" java \
 1. Create a file like [AocDay01.kt](src/main/kotlin/dev/mtib/aoc24/days/AocDay01.kt) matching the day number (
    e.g. `AocDay05.kt` for day 5).
 2. Overwrite the `part1` and `part2` methods with your implementation, returning the solution as a String.
-3. Run the application with the command above, replacing `<day>` with the day number.
+3. Run the application with the command above, replacing `<day>` with the day number, or just running with `latest`, to
+   run the most recent day.
 
 If provided with the `SESSION` in your environment variables (matching the cookie value from the AoC website), the
 application will automatically fetch the input for the given day.
