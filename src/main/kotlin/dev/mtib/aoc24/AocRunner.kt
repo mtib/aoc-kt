@@ -50,6 +50,8 @@ suspend fun main(args: Array<String>) {
     if (days.isEmpty()) {
         logger.error { "No day provided" }
         return
+    } else {
+        logger.info { "Running days: ${days.toList().sorted().joinToString(", ")}" }
     }
 
     days.forEach { day ->
