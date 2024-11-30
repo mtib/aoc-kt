@@ -6,6 +6,7 @@ import kotlinx.coroutines.channels.toList
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.nio.file.NoSuchFileException
 import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.io.path.readText
@@ -53,6 +54,8 @@ object Results {
             path.readText().let { json ->
                 Json.decodeFromString<List<Result>>(json)
             }.find { it.day == day && it.part == part && it.verified }
+        } catch (e: NoSuchFileException) {
+            null
         } catch (e: Exception) {
             logger.error(e) { "Failed to read results" }
             null
@@ -92,6 +95,5 @@ object Results {
 
     class RunResult(val result: String, day: Int, part: Int) : RunData(day, part)
     class BenchmarkResult(val duration: Duration, day: Int, part: Int) : RunData(day, day)
-
     data class IdentifiedPart(val day: Int, val part: Int)
 }
