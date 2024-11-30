@@ -10,6 +10,22 @@ SESSION="<your session cookie>" java \
   -jar build/libs/aoc24-0.1.0-all.jar <day>
 ```
 
+## How to use
+
+1. Create a file like [AocDay01.kt](src/main/kotlin/dev/mtib/aoc24/days/AocDay01.kt) matching the day number (
+   e.g. `AocDay05.kt` for day 5).
+2. Overwrite the `part1` and `part2` methods with your implementation, returning the solution as a String.
+3. Run the application with the command above, replacing `<day>` with the day number.
+
+If provided with the `SESSION` in your environment variables (matching the cookie value from the AoC website), the
+application will automatically fetch the input for the given day.
+This will run the parts of the day you implemented and print the results.
+Then run 10s worth of benchmarks for both parts and print their results.
+Inside `src/main/resources` you will find the input files for each day you've run, as well as plots for the benchmarks,
+as well as a results.json file with all results ever recorded.
+(You may want to mark a particular run as `"validated": true` in the results file to detect regressions (different
+results) in future runs.)
+
 ## Tools & technologies
 
 ### Foundation
