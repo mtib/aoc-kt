@@ -19,6 +19,7 @@ dependencies {
     implementation("org.slf4j:slf4j-simple:2.1.0-alpha1")
     implementation("io.arrow-kt:arrow-core:1.2.4")
     implementation("io.arrow-kt:arrow-fx-coroutines:1.2.4")
+    implementation("org.ojalgo:ojalgo:55.0.1")
 
     implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.9.2")
     runtimeOnly("org.jetbrains.lets-plot:lets-plot-image-export:4.5.1")

@@ -12,15 +12,23 @@ SESSION="<your session cookie>" java \
 
 ## Tools & technologies
 
+### Foundation
+
 - Kotlin
     - Kotlin.coroutines
     - Kotlin.serialisation
+- arrow-kt: Functional programming and stdlib extensions
+- lets-plot: Data visualisation
+- GraphJ: Graph representations and algorithms
+- oj!Algo: MIP solver and fast math
+
+### Build tools
+
 - Gradle
-- arrow-kt
-- lets-plot
-- GraphJ
+
+### Misc
+
 - SLF4J
 - KotlinLogging
 - JUnit 5
 - Kotest
-
