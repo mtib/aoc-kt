@@ -8,14 +8,7 @@ import dev.mtib.aoc24.benchmark.BenchmarkWindowPlotter
 import dev.mtib.aoc24.days.AocDay
 import dev.mtib.aoc24.days.IAocDay
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
+import kotlinx.coroutines.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.microseconds
 import kotlin.time.Duration.Companion.seconds
@@ -141,7 +134,7 @@ suspend fun benchmark(
             }
             .toDouble()
             .microseconds
-        Results.send(BenchmarkResult(average, day, part))
+        Results.send(BenchmarkResult(average, durations.size.toLong(), day, part))
         cleanupScope.launch(start = CoroutineStart.LAZY) {
             BenchmarkWindowPlotter(day, part, BENCHMARK_WINDOW, durations).plot()
         }

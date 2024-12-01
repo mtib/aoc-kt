@@ -20,7 +20,7 @@ jobs:
         env:
           SESSION: ${{ secrets.SESSION }}
       - run: cp build/libs/aoc24-0.1.0-all.jar src/main/resources/aoc24-0.1.0-all.jar
-      - run: rm src/main/resources/day*.txt src/main/resources/results.json
+      - run: rm src/main/resources/day*.txt src/main/resources/results.json src/main/resources/.gitignore
       - uses: idlefingers/do-space-sync-action@master
         with:
           args: --acl public-read
