@@ -6,6 +6,9 @@ import kotlinx.coroutines.channels.toList
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.nio.file.NoSuchFileException
 import kotlin.io.path.Path
 import kotlin.io.path.readText
@@ -54,6 +57,38 @@ object Results {
         path.writeText(json.encodeToString(current + result))
     }
 
+    /**
+     * Saves version of the results that doesn't contain any sensitive information.
+     */
+    fun saveCleaned() {
+        buildJsonObject {
+            put("days", buildJsonObject {
+                get().groupBy { it.day }.mapValues { (_, parts) ->
+                    parts.groupBy { it.part }
+                }.entries.forEach { (day, parts) ->
+                    put(day.toString(), buildJsonObject {
+                        put("parts", buildJsonObject {
+                            parts.entries.forEach { (part, results) ->
+                                put(part.toString(), buildJsonArray {
+                                    results.forEach { result ->
+                                        add(
+                                            buildJsonObject {
+                                                put("benchmarkMicros", result.benchmarkMicros)
+                                                put("timestamp", result.timestamp)
+                                            }
+                                        )
+                                    }
+                                })
+                            }
+                        })
+                    })
+                }
+            })
+        }.let { data ->
+            path.resolveSibling("results_cleaned.json").writeText(json.encodeToString(data))
+        }
+    }
+
     fun findVerifiedOrNull(day: Int, part: Int): Result? {
         return get().find { it.day == day && it.part == part && it.verified }
     }
@@ -80,6 +115,7 @@ object Results {
                 )
             )
         }
+        saveCleaned()
     }
 
     sealed class RunData(

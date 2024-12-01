@@ -1,3 +1,4 @@
 benchmark*.png
 results.json
+results_cleaned.json
 day*.txt
