@@ -5,8 +5,6 @@ import arrow.core.Option
 import arrow.core.getOrElse
 import arrow.core.some
 import arrow.core.toOption
-import io.github.oshai.kotlinlogging.KLogger
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
@@ -22,17 +20,19 @@ import kotlin.io.path.writeText
 import kotlin.time.Duration.Companion.milliseconds
 
 open class AocDay(
-    private val day: Int,
-) : IAocDay {
+    val day: Int,
+) : PuzzleExecutor {
     init {
         this.also { solutions[day] = it }
     }
 
     companion object {
-        private val solutions = mutableMapOf<Int, IAocDay>()
-        private val logger = KotlinLogging.logger {}
-        fun get(day: Int): Option<IAocDay> = solutions[day].toOption()
-        fun getAll(): Map<Int, IAocDay> = solutions.toList().associateBy({ it.first }, { it.second })
+        private val solutions = mutableMapOf<Int, AocDay>()
+        fun get(day: Int): Option<AocDay> = solutions[day].toOption()
+        fun getAll(): Map<Int, AocDay> = solutions.toList().associateBy({ it.first }, { it.second })
+        fun getByClass(clazz: Class<*>): Option<AocDay> =
+            solutions.values.find { it::class.java == clazz }.toOption()
+
         fun getReleaseTime(day: Int): ZonedDateTime {
             return ZonedDateTime.of(2024, 12, day, 0, 0, 0, 0, ZoneId.of("UTC-5"))
         }
@@ -40,10 +40,7 @@ open class AocDay(
         fun load() {
             val packageName = AocDay::class.java.packageName
 
-            logger.trace { "Loading days from package $packageName" }
-
             Reflections(packageName).getSubTypesOf(AocDay::class.java).forEach {
-                logger.trace { "Reflections found ${it.simpleName}" }
                 Class.forName(it.name) // This loads the "class" of the object, which registers itself in `solutions` during init.
             }
         }
@@ -51,13 +48,7 @@ open class AocDay(
 
     open val pool: CoroutineDispatcher = Dispatchers.Default
     var benchmarking: Boolean = false
-    fun KLogger.log(message: () -> String) {
-        if (benchmarking) {
-            return
-        }
-        this.info { message() }
-    }
-
+    var partMode: Int? = null
     val releaseTime = getReleaseTime(day)
     val inputLocation = "src/main/resources/day${day.toString().padStart(2, '0')}.txt"
     fun fetchInput() {
@@ -84,7 +75,10 @@ open class AocDay(
         } (in ${
             (getReleaseTime(day).toInstant().toEpochMilli() - System.currentTimeMillis()).milliseconds
         })"
-    )
+    ) {
+        val releaseTime = getReleaseTime(day)
+        val waitDuration = (releaseTime.toInstant().toEpochMilli() - System.currentTimeMillis()).milliseconds
+    }
 
     suspend fun <T> withInput(input: String, block: suspend AocDay.() -> T): T {
         fakedInput = input.some()

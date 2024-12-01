@@ -1,8 +1,8 @@
 package dev.mtib.aoc24.benchmark
 
-import dev.mtib.aoc24.Results
-import dev.mtib.aoc24.Results.toInstant
-import io.github.oshai.kotlinlogging.KotlinLogging
+import dev.mtib.aoc24.util.AocLogger
+import dev.mtib.aoc24.util.Results
+import dev.mtib.aoc24.util.Results.toInstant
 import org.jetbrains.letsPlot.export.ggsave
 import org.jetbrains.letsPlot.geom.geomLine
 import org.jetbrains.letsPlot.geom.geomPoint
@@ -20,7 +20,7 @@ class BenchmarkProgressPlotter(
     private val day: Int,
 ) {
     companion object {
-        private val logger = KotlinLogging.logger {}
+        private val logger = AocLogger.new { }
     }
 
     fun plot() {
@@ -130,9 +130,12 @@ class BenchmarkProgressPlotter(
             y = "Runtime [ms]"
         )
 
+        val filename = "benchmark_${day.toString().padStart(2, '0')}_progress.png"
+        logger.log(day) { "saving benchmark progress plot to $filename" }
+
         ggsave(
             plot = plot,
-            filename = "benchmark_${day.toString().padStart(2, '0')}_progress.png",
+            filename = filename,
             path = Path(System.getenv("PWD")!!).resolve(Path("./src/main/resources")).toString()
         )
     }

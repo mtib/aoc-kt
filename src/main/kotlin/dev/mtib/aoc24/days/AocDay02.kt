@@ -1,10 +1,10 @@
 package dev.mtib.aoc24.days
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import dev.mtib.aoc24.util.AocLogger
 import kotlinx.coroutines.coroutineScope
 
 object AocDay02 : AocDay(2) {
-    private val logger = KotlinLogging.logger {}
+    private val logger = AocLogger.new { }
     override suspend fun part1(): String = coroutineScope {
         super.part1()
     }

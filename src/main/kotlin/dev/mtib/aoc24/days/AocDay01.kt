@@ -1,6 +1,6 @@
 package dev.mtib.aoc24.days
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import dev.mtib.aoc24.util.AocLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 object AocDay01 : AocDay(1) {
-    private val logger = KotlinLogging.logger {}
+    private val logger = AocLogger.new { }
     private fun CoroutineScope.readChannels(): Pair<Channel<Int>, Channel<Int>> {
         val left = Channel<Int>(Channel.UNLIMITED)
         val right = Channel<Int>(Channel.UNLIMITED)
@@ -61,10 +61,8 @@ object AocDay01 : AocDay(1) {
             collector.state
         }
 
-        if (!benchmarking) {
-            leftList.await().let { logger.log { "Left: ${it.size}" } }
-            rightList.await().let { logger.log { "Right: ${it.size}" } }
-        }
+        logger.logSuspend { leftList.await().let { "left list size: ${it.size}" } }
+        logger.logSuspend { rightList.await().let { "right list size: ${it.size}" } }
 
         val result = leftList.await().zip(rightList.await()) { l, r -> abs(l - r) }.sum()
 
@@ -85,6 +83,11 @@ object AocDay01 : AocDay(1) {
             val collector = GroupingCountByCollector()
             right.consumeAsFlow().collect(collector)
             collector.state
+        }
+
+        logger.logSuspend {
+            rightList.await()
+                .let { "right map size: ${it.size} (min=${it.values.min()}, max=${it.values.max()})" }
         }
 
         val r = rightList.await()

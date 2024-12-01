@@ -1,6 +1,5 @@
-package dev.mtib.aoc24
+package dev.mtib.aoc24.util
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.toList
 import kotlinx.serialization.Serializable
@@ -19,7 +18,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.microseconds
 
 object Results {
-    private val logger = KotlinLogging.logger {}
+    private val logger = AocLogger.new { }
     private val path = Path("src/main/resources/results.json")
     private val startTime = System.currentTimeMillis()
     private val runDataChannel = Channel<RunData>(Channel.UNLIMITED)
@@ -145,6 +144,7 @@ object Results {
             )
         }
         saveCleaned()
+        logger.log { "saved results" }
     }
 
     sealed class RunData(

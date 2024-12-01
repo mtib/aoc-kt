@@ -1,6 +1,6 @@
 package dev.mtib.aoc24.benchmark
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import dev.mtib.aoc24.util.AocLogger
 import org.jetbrains.letsPlot.export.ggsave
 import org.jetbrains.letsPlot.geom.geomLine
 import org.jetbrains.letsPlot.label.labs
@@ -19,12 +19,12 @@ class BenchmarkWindowPlotter(
     private val durations: List<Duration>
 ) {
     companion object {
-        private val logger = KotlinLogging.logger {}
+        private val logger = AocLogger.new { }
     }
 
     fun plot(skip: Int = 5) {
         if (durations.isEmpty()) {
-            logger.warn { "Not enough data points to plot" }
+            logger.error { "not enough data points to plot" }
             return
         }
 
@@ -84,6 +84,9 @@ class BenchmarkWindowPlotter(
             x = "Window end index",
             y = "Average time [ms]"
         )
+
+        val filename = "benchmark_${day.toString().padStart(2, '0')}_$part.png"
+        logger.log(day, part) { "saving benchmark window plot to $filename" }
 
         ggsave(
             plot = plot,
