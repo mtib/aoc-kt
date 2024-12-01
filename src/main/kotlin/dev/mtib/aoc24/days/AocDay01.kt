@@ -4,6 +4,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consume
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.consumeAsFlow
@@ -69,13 +71,6 @@ object AocDay01 : AocDay(1) {
         result.toString()
     }
 
-    class SetFlowCollector : FlowCollector<Int> {
-        val state = mutableSetOf<Int>()
-        override suspend fun emit(value: Int) {
-            state.add(value)
-        }
-    }
-
     class GroupingCountByCollector : FlowCollector<Int> {
         val state = mutableMapOf<Int, Int>()
         override suspend fun emit(value: Int) {
@@ -86,11 +81,6 @@ object AocDay01 : AocDay(1) {
     override suspend fun part2(): String = coroutineScope {
         val (left, right) = readChannels()
 
-        val leftList = async {
-            val collector = SetFlowCollector()
-            left.consumeAsFlow().collect(collector)
-            collector.state
-        }
         val rightList = async {
             val collector = GroupingCountByCollector()
             right.consumeAsFlow().collect(collector)
@@ -98,8 +88,12 @@ object AocDay01 : AocDay(1) {
         }
 
         val r = rightList.await()
-        val result = leftList.await().sumOf {
-            it * (r[it] ?: 0)
+        val result = left.consume {
+            var sum = 0
+            left.consumeEach {
+                sum += it * (r[it] ?: 0)
+            }
+            sum
         }
 
         result.toString()

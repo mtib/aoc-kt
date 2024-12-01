@@ -1,6 +1,9 @@
 package dev.mtib.aoc24.days
 
+import arrow.core.None
 import arrow.core.Option
+import arrow.core.getOrElse
+import arrow.core.some
 import arrow.core.toOption
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -83,7 +86,13 @@ open class AocDay(
         })"
     )
 
-    val input: String by lazy {
+    suspend fun <T> withInput(input: String, block: suspend AocDay.() -> T): T {
+        fakedInput = input.some()
+        return this.block().also { fakedInput = None }
+    }
+
+    private var fakedInput: Option<String> = None
+    val realInput: String by lazy {
         if (!Path(inputLocation).exists()) {
             if (releaseTime.isAfter(ZonedDateTime.now())) {
                 throw DayNotReleasedException(day)
@@ -92,6 +101,9 @@ open class AocDay(
         }
         Path(inputLocation).readText().trimEnd('\n')
     }
+
+    val input: String
+        get() = fakedInput.getOrElse { realInput }
 
     val inputLinesList: List<String>
         get() = input.lines()
