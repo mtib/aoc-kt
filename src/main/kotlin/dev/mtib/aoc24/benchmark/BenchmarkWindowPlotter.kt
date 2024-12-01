@@ -1,4 +1,4 @@
-package dev.mtib.aoc24
+package dev.mtib.aoc24.benchmark
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.letsPlot.export.ggsave

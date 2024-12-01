@@ -52,7 +52,7 @@ open class AocDay(
         if (benchmarking) {
             return
         }
-        logger.info { message() }
+        this.info { message() }
     }
 
     val releaseTime = getReleaseTime(day)

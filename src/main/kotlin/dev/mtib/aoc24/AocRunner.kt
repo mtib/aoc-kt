@@ -3,11 +3,18 @@ package dev.mtib.aoc24
 import arrow.core.getOrElse
 import dev.mtib.aoc24.Results.BenchmarkResult
 import dev.mtib.aoc24.Results.RunResult
+import dev.mtib.aoc24.benchmark.BenchmarkProgressPlotter
+import dev.mtib.aoc24.benchmark.BenchmarkWindowPlotter
 import dev.mtib.aoc24.days.AocDay
 import dev.mtib.aoc24.days.IAocDay
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
@@ -18,6 +25,7 @@ import kotlin.time.measureTime
 import kotlin.time.measureTimedValue
 
 private val mainLogger = KotlinLogging.logger { }
+private val cleanupScope = CoroutineScope(Dispatchers.IO)
 
 const val BENCHMARK_WINDOW = 100
 const val BENCHMARK_TIMEOUT_SECONDS = 10
@@ -50,6 +58,12 @@ suspend fun main(args: Array<String>) {
     }
 
     Results.collect()
+
+    cleanupScope.coroutineContext[Job]?.also {
+        mainLogger.debug { "Waiting for cleanup scope" }
+        it.start()
+        joinAll(*it.children.toList().toTypedArray())
+    }
 }
 
 suspend fun runDay(day: Int) {
@@ -76,6 +90,10 @@ suspend fun runDay(day: Int) {
                 }
             }
         }
+    }
+
+    cleanupScope.launch(start = CoroutineStart.LAZY) {
+        BenchmarkProgressPlotter(day).plot()
     }
 }
 
@@ -128,7 +146,9 @@ suspend fun benchmark(
             .toDouble()
             .microseconds
         Results.send(BenchmarkResult(average, day, part))
-        BenchmarkWindowPlotter(day, part, BENCHMARK_WINDOW, durations).plot()
+        cleanupScope.launch(start = CoroutineStart.LAZY) {
+            BenchmarkWindowPlotter(day, part, BENCHMARK_WINDOW, durations).plot()
+        }
         mainLogger.info { "Day $day part $part average of $average (Discord command: `/aoc_benchmark day:$day part:$part time_milliseconds:${average.inWholeMicroseconds / 1000.0}`)" }
     } catch (e: NotImplementedError) {
         mainLogger.debug { "Day $day part $part not implemented" }

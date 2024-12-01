@@ -8,7 +8,6 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.nio.file.NoSuchFileException
 import kotlin.io.path.Path
-import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.time.Duration
@@ -30,36 +29,33 @@ object Results {
         val verified: Boolean = false,
     )
 
-    fun save(result: Result) {
-        val current = run {
-            if (!path.exists()) {
-                emptyList()
-            } else {
-                try {
-                    path.readText().let { json ->
-                        Json.decodeFromString<List<Result>>(json)
-                    }
-                } catch (e: Exception) {
-                    logger.error(e) { "Failed to read results" }
-                    emptyList()
-                }
-            }
-        }
-
-        path.writeText(Json { prettyPrint = true }.encodeToString(current + result))
-    }
-
-    fun findVerifiedOrNull(day: Int, part: Int): Result? {
+    fun Result.toInstant() = java.time.Instant.ofEpochMilli(timestamp)!!
+    private fun get(): List<Result> {
         return try {
             path.readText().let { json ->
                 Json.decodeFromString<List<Result>>(json)
-            }.find { it.day == day && it.part == part && it.verified }
+            }
         } catch (e: NoSuchFileException) {
-            null
+            emptyList()
         } catch (e: Exception) {
             logger.error(e) { "Failed to read results" }
-            null
+            emptyList()
         }
+    }
+
+    fun getProgress(day: Int, part: Int): Iterable<Result> {
+        return get().filter { it.day == day && it.part == part }
+    }
+
+    private val json = Json { prettyPrint = true }
+    fun save(result: Result) {
+        val current = get()
+
+        path.writeText(json.encodeToString(current + result))
+    }
+
+    fun findVerifiedOrNull(day: Int, part: Int): Result? {
+        return get().find { it.day == day && it.part == part && it.verified }
     }
 
     suspend fun send(result: RunData) {
@@ -94,6 +90,6 @@ object Results {
     }
 
     class RunResult(val result: String, day: Int, part: Int) : RunData(day, part)
-    class BenchmarkResult(val duration: Duration, day: Int, part: Int) : RunData(day, day)
+    class BenchmarkResult(val duration: Duration, day: Int, part: Int) : RunData(day, part)
     data class IdentifiedPart(val day: Int, val part: Int)
 }

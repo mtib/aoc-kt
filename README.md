@@ -40,7 +40,7 @@ This will run the parts of the day you implemented and print the results.
 Then run 10s worth of benchmarks for both parts and print their results.
 Inside `src/main/resources` you will find the input files for each day you've run, as well as plots for the benchmarks,
 as well as a results.json file with all results ever recorded.
-(You may want to mark a particular run as `"validated": true` in the results file to detect regressions (different
+(You may want to mark a particular run as `"verified": true` in the results file to detect regressions (different
 results) in future runs.)
 
 ## Tools & technologies
