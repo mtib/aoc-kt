@@ -2,8 +2,6 @@ package dev.mtib.aoc24.days
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -14,8 +12,6 @@ import kotlin.math.abs
 
 object AocDay01 : AocDay(1) {
     private val logger = KotlinLogging.logger {}
-
-    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private fun CoroutineScope.readChannels(): Pair<Channel<Int>, Channel<Int>> {
         val left = Channel<Int>(Channel.UNLIMITED)
         val right = Channel<Int>(Channel.UNLIMITED)
