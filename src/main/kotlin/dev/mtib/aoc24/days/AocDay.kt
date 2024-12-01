@@ -2,7 +2,10 @@ package dev.mtib.aoc24.days
 
 import arrow.core.Option
 import arrow.core.toOption
+import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.reflections.Reflections
@@ -41,6 +44,15 @@ open class AocDay(
                 Class.forName(it.name) // This loads the "class" of the object, which registers itself in `solutions` during init.
             }
         }
+    }
+
+    open val pool: CoroutineDispatcher = Dispatchers.Default
+    var benchmarking: Boolean = false
+    fun KLogger.log(message: () -> String) {
+        if (benchmarking) {
+            return
+        }
+        logger.info { message() }
     }
 
     val releaseTime = getReleaseTime(day)

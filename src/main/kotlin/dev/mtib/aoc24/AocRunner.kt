@@ -6,8 +6,11 @@ import dev.mtib.aoc24.Results.RunResult
 import dev.mtib.aoc24.days.AocDay
 import dev.mtib.aoc24.days.IAocDay
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.*
-import java.util.concurrent.Executors
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.microseconds
 import kotlin.time.Duration.Companion.seconds
@@ -18,7 +21,6 @@ private val mainLogger = KotlinLogging.logger { }
 
 const val BENCHMARK_WINDOW = 100
 const val BENCHMARK_TIMEOUT_SECONDS = 10
-
 suspend fun main(args: Array<String>) {
     mainLogger.info { "Starting AoC 2024" }
     AocDay.load()
@@ -56,18 +58,19 @@ suspend fun runDay(day: Int) {
         return
     }
 
-    val pool = Executors.newVirtualThreadPerTaskExecutor().asCoroutineDispatcher() + CoroutineName("aoc")
-
     mapOf(
         ::runResults to "Running for day $day results",
         ::benchmark to "Running for day $day benchmarks",
     ).forEach { (func, message) ->
+        if (aocDay is AocDay) {
+            aocDay.benchmarking = func == ::benchmark
+        }
         mainLogger.info { message }
         mapOf(
             1 to IAocDay::part1,
             2 to IAocDay::part2,
         ).forEach { (part, block) ->
-            withContext(pool) {
+            withContext(if (aocDay is AocDay) aocDay.pool else Dispatchers.Default) {
                 func(day, part) {
                     block(aocDay)
                 }
