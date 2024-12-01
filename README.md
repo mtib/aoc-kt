@@ -7,6 +7,7 @@
 SESSION="<your session cookie>" java \
   -Dorg.slf4j.simpleLogger.log.dev.mtib.aoc24.AocRunner=INFO \
   -Dorg.slf4j.simpleLogger.showThreadName=false \
+  -Djava.awt.headless=true \
   -jar build/libs/aoc24-0.1.0-all.jar all
 ```
 
@@ -14,16 +15,16 @@ Alternatively, to run a specific day or set of days:
 
 ```bash
 # run day 5
-[...] java [...] -jar build/libs/aoc24-0.1.0-all.jar 5
+java -jar build/libs/aoc24-0.1.0-all.jar 5
 
 # run day 1, 3, 24
-[...] java [...] -jar build/libs/aoc24-0.1.0-all.jar 1 3 24
+java -jar build/libs/aoc24-0.1.0-all.jar 1 3 24
 
 # run all days
-[...] java [...] -jar build/libs/aoc24-0.1.0-all.jar all
+java -jar build/libs/aoc24-0.1.0-all.jar all
 
 # run the latest day available
-[...] java [...] -jar build/libs/aoc24-0.1.0-all.jar latest
+java -jar build/libs/aoc24-0.1.0-all.jar latest
 ```
 
 ## How to use
