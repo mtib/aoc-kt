@@ -25,6 +25,8 @@ dependencies {
     implementation("org.reflections:reflections:0.10.2")
 
     implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.9.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.11.0")
+    implementation("org.jetbrains.lets-plot:lets-plot-jfx:2.0.2")
     runtimeOnly("org.jetbrains.lets-plot:lets-plot-image-export:4.5.1")
 
     testImplementation(kotlin("test"))
@@ -51,5 +53,5 @@ tasks.test {
     useJUnitPlatform()
 }
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(23)
 }

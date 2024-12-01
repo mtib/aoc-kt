@@ -12,11 +12,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.microseconds
@@ -126,18 +124,16 @@ suspend fun benchmark(
     try {
         val durations = mutableListOf<Duration>()
         val timeout = BENCHMARK_TIMEOUT_SECONDS.seconds
-        try {
-            withTimeout(timeout) {
-                while (true) {
-                    measureTime { block() }.also {
-                        durations.add(it)
-                    }
-                    yield()
+        val startTime = System.currentTimeMillis()
+        val benchmarkDuration = measureTime {
+            while (System.currentTimeMillis() - startTime < timeout.inWholeMilliseconds && durations.size < BENCHMARK_WINDOW * 20) {
+                measureTime { block() }.also {
+                    durations.add(it)
                 }
+                yield()
             }
-        } catch (e: TimeoutCancellationException) {
-            mainLogger.debug { "Day $day part $part finished ${durations.size} iterations in $timeout" }
         }
+        mainLogger.debug { "Day $day part $part benchmarked ${durations.size} iterations in $benchmarkDuration" }
         val average = durations
             .takeLast(BENCHMARK_WINDOW)
             .let { tail ->
