@@ -11,6 +11,8 @@ SESSION="<your session cookie>" java \
   -jar build/libs/aoc24-0.1.0-all.jar all
 ```
 
+The jar file is also available [here](https://aoc24.fra1.cdn.digitaloceanspaces.com/aoc24-0.1.0-all.jar).
+
 Alternatively, to run a specific day or set of days:
 
 ```bash
@@ -66,3 +68,15 @@ results) in future runs.)
 - KotlinLogging
 - JUnit 5
 - Kotest
+
+## Results
+
+Benchmark results run on GitHub Actions can be
+found [here](https://aoc24.fra1.cdn.digitaloceanspaces.com/results_cleaned.json). As well as plots for the performance
+of each part:
+
+![Day 1](https://aoc24.fra1.cdn.digitaloceanspaces.com/benchmark_01_1.png)
+
+(These are updated after each push to the main branch. Available
+at `https://aoc24.fra1.cdn.digitaloceanspaces.com/benchmark_<day>_<part>.png`, with `<day>` and `<part>` being the
+zero-padded day and single-digit part number respectively.)
