@@ -1,0 +1,32 @@
+name: Run
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'oracle'
+          java-version: 23
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew build
+      - run: ./gradlew test
+      - run: ./gradlew fatJar
+      - run: java -jar build/libs/aoc24-0.1.0-all.jar all
+        env:
+          SESSION: ${{ secrets.SESSION }}
+      - run: cp build/libs/aoc24-0.1.0-all.jar src/main/resources/aoc24-0.1.0-all.jar
+      - run: rm src/main/resources/day*.txt src/main/resources/results.json
+      - uses: idlefingers/do-space-sync-action@master
+        with:
+          args: --acl public-read
+        env:
+          SOURCE_DIR: './src/main/resources/'
+          SPACE_NAME: ${{ secrets.SPACE_NAME }}
+          SPACE_REGION: ${{ secrets.SPACE_REGION}}
+          SPACE_ACCESS_KEY_ID: ${{ secrets.SPACE_ACCESS_KEY_ID }}
+          SPACE_SECRET_ACCESS_KEY: ${{ secrets.SPACE_SECRET_ACCESS_KEY }}
