@@ -1,6 +1,5 @@
 package dev.mtib.aoc24.days
 
-import arrow.fx.coroutines.parMapUnordered
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -9,7 +8,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -23,15 +21,18 @@ object AocDay01 : AocDay(1) {
         val right = Channel<Int>(Channel.UNLIMITED)
 
         launch {
-            inputLines.asFlow().parMapUnordered(8) {
-                if (it.isBlank()) {
-                    return@parMapUnordered
+            coroutineScope {
+                inputLinesList.chunked(100).forEach {
+                    launch {
+                        it.forEach {
+                            it.split("   ").map { it.toInt() }.also {
+                                left.send(it[0])
+                                right.send(it[1])
+                            }
+                        }
+                    }
                 }
-                it.split("   ").map { it.toInt() }.also {
-                    left.send(it[0])
-                    right.send(it[1])
-                }
-            }.collect { }
+            }
             left.close()
             right.close()
         }

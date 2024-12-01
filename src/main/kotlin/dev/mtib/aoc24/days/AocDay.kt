@@ -90,10 +90,15 @@ open class AocDay(
             }
             fetchInput()
         }
-        Path(inputLocation).readText()
+        Path(inputLocation).readText().trimEnd('\n')
     }
 
-    val inputLines by lazy { input.lines().toTypedArray() }
+    val inputLinesList: List<String>
+        get() = input.lines()
+
+    val inputLinesArray: Array<String>
+        get() = inputLinesList.toTypedArray()
+
     override suspend fun part1(): String {
         throw NotImplementedError()
     }
