@@ -8,7 +8,14 @@ import dev.mtib.aoc24.benchmark.BenchmarkWindowPlotter
 import dev.mtib.aoc24.days.AocDay
 import dev.mtib.aoc24.days.IAocDay
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.microseconds
 import kotlin.time.Duration.Companion.seconds
@@ -119,7 +126,7 @@ suspend fun benchmark(
         val timeout = BENCHMARK_TIMEOUT_SECONDS.seconds
         val startTime = System.currentTimeMillis()
         val benchmarkDuration = measureTime {
-            while (System.currentTimeMillis() - startTime < timeout.inWholeMilliseconds && durations.size < BENCHMARK_WINDOW * 20) {
+            while (System.currentTimeMillis() - startTime < timeout.inWholeMilliseconds && (durations.size < BENCHMARK_WINDOW * 20 || System.currentTimeMillis() - startTime < 1.seconds.inWholeMilliseconds)) {
                 measureTime { block() }.also {
                     durations.add(it)
                 }
