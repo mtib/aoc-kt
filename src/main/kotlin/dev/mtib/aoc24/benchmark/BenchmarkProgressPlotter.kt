@@ -5,6 +5,7 @@ import dev.mtib.aoc24.Results.toInstant
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.letsPlot.export.ggsave
 import org.jetbrains.letsPlot.geom.geomLine
+import org.jetbrains.letsPlot.geom.geomPoint
 import org.jetbrains.letsPlot.label.labs
 import org.jetbrains.letsPlot.letsPlot
 import org.jetbrains.letsPlot.scale.scaleXDateTime
@@ -50,6 +51,20 @@ class BenchmarkProgressPlotter(
             }
         }
 
+        val failedData = results.mapValues { partResults ->
+            partResults.value.filter { it.benchmarkMicros != null || (validated[partResults.key] != null && validated[partResults.key] != it.result) }
+        }.mapValues {
+            buildMap<String, MutableList<Any>> {
+                it.value.forEach {
+                    getOrPut("x") { mutableListOf() }.add(
+                        it.toInstant()
+                            .plusMillis(TimeZone.getTimeZone("Europe/Copenhagen").getOffset(it.timestamp).toLong())
+                    )
+                    getOrPut("y${it.part}") { mutableListOf() }.add(it.benchmarkMicros!!.div(1000.0))
+                }
+            }
+        }
+
         val plot = letsPlot() + geomLine(
             data = data[1]!!,
             color = "#44a",
@@ -59,12 +74,44 @@ class BenchmarkProgressPlotter(
         ) {
             x = "x"
             y = "y1"
+        } + geomPoint(
+            data = data[1]!!,
+            color = "#44a",
+            alpha = 0.9,
+            manualKey = "part1",
+        ) {
+            x = "x"
+            y = "y1"
+        } + geomPoint(
+            data = failedData[1]!!,
+            color = "#44a",
+            alpha = 0.5,
+            manualKey = "part1",
+        ) {
+            x = "x"
+            y = "y1"
         } + geomLine(
             data = data[2]!!,
             color = "#a44",
             alpha = 0.9,
             manualKey = "part2",
             linetype = validated[2]?.let { "solid" } ?: "dashed"
+        ) {
+            x = "x"
+            y = "y2"
+        } + geomPoint(
+            data = data[2]!!,
+            color = "#a44",
+            alpha = 0.9,
+            manualKey = "part2",
+        ) {
+            x = "x"
+            y = "y2"
+        } + geomPoint(
+            data = failedData[2]!!,
+            color = "#a44",
+            alpha = 0.5,
+            manualKey = "part2",
         ) {
             x = "x"
             y = "y2"
