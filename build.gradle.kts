@@ -46,7 +46,7 @@ tasks.create("fatJar", Jar::class) {
         configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
     })
     manifest {
-        attributes["Main-Class"] = "dev.mtib.aoc24.AocRunnerKt"
+        attributes["Main-Class"] = "dev.mtib.aoc.AocRunnerKt"
     }
 }
 

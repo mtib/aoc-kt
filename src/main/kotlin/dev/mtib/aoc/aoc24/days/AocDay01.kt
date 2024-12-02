@@ -1,6 +1,7 @@
-package dev.mtib.aoc24.days
+package dev.mtib.aoc.aoc24.days
 
-import dev.mtib.aoc24.util.AocLogger
+import dev.mtib.aoc.day.AocDay
+import dev.mtib.aoc.util.AocLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel

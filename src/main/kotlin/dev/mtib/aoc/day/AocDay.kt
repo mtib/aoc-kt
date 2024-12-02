@@ -1,4 +1,4 @@
-package dev.mtib.aoc24.days
+package dev.mtib.aoc.day
 
 import arrow.core.None
 import arrow.core.Option
@@ -38,7 +38,7 @@ open class AocDay(
         }
 
         fun load() {
-            val packageName = AocDay::class.java.packageName
+            val packageName = AocDay::class.java.packageName.split(".").dropLast(1).joinToString(".")
 
             Reflections(packageName).getSubTypesOf(AocDay::class.java).forEach {
                 Class.forName(it.name) // This loads the "class" of the object, which registers itself in `solutions` during init.

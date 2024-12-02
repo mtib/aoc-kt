@@ -1,9 +1,9 @@
-package dev.mtib.aoc24.util
+package dev.mtib.aoc.util
 
 import com.github.ajalt.mordant.rendering.TextColors
 import com.github.ajalt.mordant.rendering.TextStyles
 import com.github.ajalt.mordant.terminal.Terminal
-import dev.mtib.aoc24.days.AocDay
+import dev.mtib.aoc.day.AocDay
 
 class AocLogger private constructor(
     private val name: String,

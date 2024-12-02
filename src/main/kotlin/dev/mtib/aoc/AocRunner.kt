@@ -1,17 +1,17 @@
-package dev.mtib.aoc24
+package dev.mtib.aoc
 
 import arrow.core.getOrElse
 import com.github.ajalt.mordant.rendering.TextColors
 import com.github.ajalt.mordant.rendering.TextStyles
-import dev.mtib.aoc24.benchmark.BenchmarkProgressPlotter
-import dev.mtib.aoc24.benchmark.BenchmarkWindowPlotter
-import dev.mtib.aoc24.days.AocDay
-import dev.mtib.aoc24.days.PuzzleExecutor
-import dev.mtib.aoc24.util.AocLogger
-import dev.mtib.aoc24.util.AocLogger.Companion.resultTheme
-import dev.mtib.aoc24.util.Results
-import dev.mtib.aoc24.util.Results.BenchmarkResult
-import dev.mtib.aoc24.util.Results.RunResult
+import dev.mtib.aoc.benchmark.BenchmarkProgressPlotter
+import dev.mtib.aoc.benchmark.BenchmarkWindowPlotter
+import dev.mtib.aoc.day.AocDay
+import dev.mtib.aoc.day.PuzzleExecutor
+import dev.mtib.aoc.util.AocLogger
+import dev.mtib.aoc.util.AocLogger.Companion.resultTheme
+import dev.mtib.aoc.util.Results
+import dev.mtib.aoc.util.Results.BenchmarkResult
+import dev.mtib.aoc.util.Results.RunResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -55,7 +55,7 @@ suspend fun main(args: Array<String>) {
         logger.log { "running days: ${days.toList().sorted().joinToString(", ")}" }
     }
 
-    days.forEach { day ->
+    days.toList().sorted().forEach { day ->
         runDay(day)
     }
 

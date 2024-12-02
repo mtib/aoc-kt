@@ -1,7 +1,7 @@
-package dev.mtib.aoc24
+package dev.mtib.aoc
 
-import dev.mtib.aoc24.util.AocLogger
-import dev.mtib.aoc24.util.Results
+import dev.mtib.aoc.util.AocLogger
+import dev.mtib.aoc.util.Results
 
 private val logger = AocLogger.new {}
 fun main() {

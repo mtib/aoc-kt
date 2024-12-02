@@ -1,6 +1,6 @@
-package dev.mtib.aoc24.benchmark
+package dev.mtib.aoc.benchmark
 
-import dev.mtib.aoc24.util.AocLogger
+import dev.mtib.aoc.util.AocLogger
 import org.jetbrains.letsPlot.export.ggsave
 import org.jetbrains.letsPlot.geom.geomLine
 import org.jetbrains.letsPlot.label.labs

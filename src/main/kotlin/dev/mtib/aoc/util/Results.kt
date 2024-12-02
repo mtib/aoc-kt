@@ -1,9 +1,9 @@
-package dev.mtib.aoc24.util
+package dev.mtib.aoc.util
 
 import com.github.ajalt.mordant.terminal.ConversionResult
 import com.github.ajalt.mordant.terminal.Terminal
 import com.github.ajalt.mordant.terminal.prompt
-import dev.mtib.aoc24.util.AocLogger.Companion.resultTheme
+import dev.mtib.aoc.util.AocLogger.Companion.resultTheme
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.toList
 import kotlinx.serialization.Serializable

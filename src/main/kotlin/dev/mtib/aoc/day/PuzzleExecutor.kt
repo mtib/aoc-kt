@@ -1,4 +1,4 @@
-package dev.mtib.aoc24.days
+package dev.mtib.aoc.day
 
 interface PuzzleExecutor {
     suspend fun part1(): String
