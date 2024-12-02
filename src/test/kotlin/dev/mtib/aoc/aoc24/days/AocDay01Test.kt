@@ -5,7 +5,7 @@ import io.kotest.matchers.shouldBe
 
 class AocDay01Test : FunSpec({
     test("Part 1") {
-        AocDay01.withInput(
+        Day1.withInput(
             """
             3   4
             4   3
@@ -20,7 +20,7 @@ class AocDay01Test : FunSpec({
     }
 
     test("Part 2") {
-        AocDay01.withInput(
+        Day1.withInput(
             """
             3   4
             4   3

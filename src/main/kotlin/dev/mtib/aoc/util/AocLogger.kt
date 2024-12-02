@@ -13,11 +13,7 @@ class AocLogger private constructor(
     } catch (e: ClassNotFoundException) {
         null
     }?.let { clazz ->
-        if (clazz.superclass == AocDay::class.java) {
-            AocDay.getByClass(clazz).getOrNull()
-        } else {
-            null
-        }
+        AocDay.getByClass(clazz).getOrNull()
     }
 
     object Main

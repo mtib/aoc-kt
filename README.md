@@ -37,7 +37,7 @@ java -jar build/libs/aoc24-0.1.0-all.jar 2024:all
 
 ## How to use
 
-1. Create a file like [AocDay01.kt](src/main/kotlin/dev/mtib/aoc/aoc24/days/AocDay01.kt)
+1. Create a file like [AocDay01.kt](src/main/kotlin/dev/mtib/aoc/aoc24/days/Day1.kt)
    extending [AocDay](src/main/kotlin/dev/mtib/aoc/day/AocDay.kt).
 2. Overwrite the `part1` and `part2` methods with your implementation, returning the solution as a String.
 3. Run the application with the command above, replacing `<day>` with the day number, or just running with `latest`, to

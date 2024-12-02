@@ -34,7 +34,7 @@ private val logger = AocLogger.new {}
 private val cleanupScope = CoroutineScope(Dispatchers.IO)
 
 const val BENCHMARK_WINDOW = 100
-const val BENCHMARK_TIMEOUT_SECONDS = 10
+const val BENCHMARK_TIMEOUT_SECONDS = 5
 suspend fun main(args: Array<String>) {
     logger.log(AocLogger.Main) { "starting advent of code" }
     AocDay.load()
@@ -91,7 +91,7 @@ suspend fun main(args: Array<String>) {
         logger.log(AocLogger.Main) {
             "running day${if (days.size > 1) "s" else ""}: ${
                 sortedDays.joinToString(", ") {
-                    "${it.toInt()}.${it.year}."
+                    "${it.year}:${it.toInt()}"
                 }
             }"
         }
@@ -132,9 +132,13 @@ suspend fun runDay(day: Day) {
             val puzzle = day.PuzzleIdentity(part)
             ciTimeout(puzzle, 10.seconds) {
                 withContext(aocDay.pool) {
-                    func(day.PuzzleIdentity(part)) {
-                        block(aocDay)
-                    }
+                    func(
+                        day.PuzzleIdentity(part),
+                        {
+                            block(aocDay)
+                        },
+                        aocDay::setup,
+                    )
                 }
             }
             aocDay.partMode = null
@@ -146,9 +150,14 @@ suspend fun runDay(day: Day) {
     }
 }
 
-suspend fun runResults(puzzle: PuzzleIdentity, block: suspend () -> String) {
+suspend fun runResults(
+    puzzle: PuzzleIdentity,
+    block: suspend () -> Any,
+    setup: suspend () -> Unit = {},
+) {
     try {
-        val result = measureTimedValue { block() }
+        setup()
+        val result = measureTimedValue { block().toString() }
         val knownResult = Results.findVerifiedOrNull(puzzle)
 
         val styledResult = styleResult(result.value)
@@ -176,7 +185,8 @@ suspend fun runResults(puzzle: PuzzleIdentity, block: suspend () -> String) {
 
 suspend fun benchmark(
     puzzle: PuzzleIdentity,
-    block: suspend () -> String,
+    block: suspend () -> Any,
+    setup: suspend () -> Unit = {},
 ) {
     try {
         val durations = mutableListOf<Duration>()
@@ -184,6 +194,7 @@ suspend fun benchmark(
         val startTime = System.currentTimeMillis()
         val benchmarkDuration = measureTime {
             while (System.currentTimeMillis() - startTime < timeout.inWholeMilliseconds && (durations.size < BENCHMARK_WINDOW * 20 || System.currentTimeMillis() - startTime < 1.seconds.inWholeMilliseconds)) {
+                setup()
                 measureTime { block() }.also {
                     durations.add(it)
                 }

@@ -112,11 +112,13 @@ open class AocDay(
     val inputLinesArray: Array<String>
         get() = inputLinesList.toTypedArray()
 
-    override suspend fun part1(): String {
+    override suspend fun part1(): Any {
         throw NotImplementedError()
     }
 
-    override suspend fun part2(): String {
+    override suspend fun part2(): Any {
         throw NotImplementedError()
     }
+
+    open suspend fun setup() {}
 }

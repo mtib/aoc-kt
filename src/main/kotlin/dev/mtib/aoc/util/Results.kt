@@ -166,6 +166,7 @@ object Results {
 
             save(
                 Result(
+                    year = id.year,
                     day = id.day,
                     part = id.part,
                     benchmarkMicros = benchmarkResult?.duration?.inWholeMicroseconds,
