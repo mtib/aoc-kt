@@ -5,6 +5,8 @@ import arrow.core.Option
 import arrow.core.getOrElse
 import arrow.core.some
 import arrow.core.toOption
+import dev.mtib.aoc.util.Day
+import dev.mtib.aoc.util.Year
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
@@ -20,21 +22,26 @@ import kotlin.io.path.writeText
 import kotlin.time.Duration.Companion.milliseconds
 
 open class AocDay(
+    val year: Int,
     val day: Int,
 ) : PuzzleExecutor {
+    val identity = Day(year, day)
+
     init {
-        this.also { solutions[day] = it }
+        solutions.add(this)
     }
 
     companion object {
-        private val solutions = mutableMapOf<Int, AocDay>()
-        fun get(day: Int): Option<AocDay> = solutions[day].toOption()
-        fun getAll(): Map<Int, AocDay> = solutions.toList().associateBy({ it.first }, { it.second })
+        private val solutions = mutableListOf<AocDay>()
+        fun years(): Set<Year> = solutions.map { it.identity.toYear() }.toSet()
+        fun get(day: Day): Option<AocDay> = solutions.find { it.identity == day }.toOption()
+        fun getAll(): List<AocDay> = solutions.toList()
+        fun getAll(year: Year): List<AocDay> = solutions.filter { it.identity.toYear() == year }
         fun getByClass(clazz: Class<*>): Option<AocDay> =
-            solutions.values.find { it::class.java == clazz }.toOption()
+            solutions.find { it::class.java == clazz }.toOption()
 
-        fun getReleaseTime(day: Int): ZonedDateTime {
-            return ZonedDateTime.of(2024, 12, day, 0, 0, 0, 0, ZoneId.of("UTC-5"))
+        fun getReleaseTime(day: Day): ZonedDateTime {
+            return ZonedDateTime.of(day.year, 12, day.day, 0, 0, 0, 0, ZoneId.of("UTC-5"))
         }
 
         fun load() {
@@ -49,8 +56,8 @@ open class AocDay(
     open val pool: CoroutineDispatcher = Dispatchers.Default
     var benchmarking: Boolean = false
     var partMode: Int? = null
-    val releaseTime = getReleaseTime(day)
-    val inputLocation = "src/main/resources/day${day.toString().padStart(2, '0')}.txt"
+    val releaseTime = getReleaseTime(identity)
+    val inputLocation = "src/main/resources/day_${year}_${day.toString().padStart(2, '0')}.txt"
     fun fetchInput() {
         val token = System.getenv("SESSION")
         if (token.isNullOrBlank()) {
@@ -59,7 +66,7 @@ open class AocDay(
         }
         val client = OkHttpClient()
         val request = Request.Builder()
-            .url("https://adventofcode.com/2024/day/$day/input")
+            .url("https://adventofcode.com/$year/day/$day/input")
             .get()
             .addHeader("Cookie", "session=$token")
             .build()
@@ -68,8 +75,8 @@ open class AocDay(
         Path(inputLocation).writeText(body)
     }
 
-    class DayNotReleasedException(day: Int) : Exception(
-        "Day $day is not released yet, it will be released at ${
+    class DayNotReleasedException(day: Day) : Exception(
+        "Day $day of year ${day.year} is not released yet, it will be released at ${
             ZonedDateTime.ofInstant(getReleaseTime(day).toInstant(), ZoneId.of("CET"))
                 .format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm z"))
         } (in ${
@@ -89,7 +96,7 @@ open class AocDay(
     val realInput: String by lazy {
         if (!Path(inputLocation).exists()) {
             if (releaseTime.isAfter(ZonedDateTime.now())) {
-                throw DayNotReleasedException(day)
+                throw DayNotReleasedException(identity)
             }
             fetchInput()
         }

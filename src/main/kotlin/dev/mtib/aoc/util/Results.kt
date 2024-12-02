@@ -31,6 +31,7 @@ object Results {
 
     @Serializable
     data class Result(
+        val year: Int = 2024,
         val day: Int,
         val part: Int,
         val benchmarkMicros: Long? = null,
@@ -41,8 +42,9 @@ object Results {
         val verified: Boolean = false,
     )
 
+    fun Result.identity() = PuzzleIdentity(year, day, part)
     fun Result.toInstant() = Instant.ofEpochMilli(timestamp)!!
-    private fun get(): List<Result> {
+    private fun get(year: Int? = null): List<Result> {
         return try {
             path.readText().let { json ->
                 Json.decodeFromString<List<Result>>(json)
@@ -50,13 +52,23 @@ object Results {
         } catch (e: NoSuchFileException) {
             emptyList()
         } catch (e: Exception) {
-            logger.error(e) { "Failed to read results" }
+            logger.error(e, year) { "Failed to read results" }
             emptyList()
+        }.let {
+            if (year != null) {
+                it.filter { result -> result.year == year }
+            } else {
+                it
+            }
         }
     }
 
-    fun getProgress(day: Int, part: Int): Iterable<Result> {
-        return get().filter { it.day == day && it.part == part }
+    fun getProgress(puzzle: PuzzleIdentity): Iterable<Result> {
+        return getProgress(puzzle.year, puzzle.day, puzzle.part)
+    }
+
+    private fun getProgress(year: Int, day: Int, part: Int): Iterable<Result> {
+        return get(year).filter { it.day == day && it.part == part }
     }
 
     private val json = Json { prettyPrint = true }
@@ -64,7 +76,7 @@ object Results {
         val current = get()
 
         path.writeText(json.encodeToString((current.filter {
-            it.day != result.day || it.part != result.part || it.timestamp != result.timestamp || it.cookie != result.cookie
+            it.year != result.year || it.day != result.day || it.part != result.part || it.timestamp != result.timestamp || it.cookie != result.cookie
         } + result).sortedWith(compareBy({ it.timestamp }, { it.day }, { it.part }))))
     }
 
@@ -88,31 +100,41 @@ object Results {
             put("os", System.getProperty("RUNNER_OS"))
 
             put("results", get().size)
-            put("days", buildJsonObject {
-                get().groupBy { it.day }.mapValues { (_, parts) ->
-                    parts.groupBy { it.part }
-                }.entries.forEach { (day, parts) ->
-                    put(day.toString(), buildJsonObject {
-                        put("parts", buildJsonObject {
-                            parts.entries.forEach { (part, results) ->
-                                put(part.toString(), buildJsonArray {
-                                    results.forEach { result ->
-                                        add(
-                                            buildJsonObject {
-                                                put("benchmark", buildJsonObject {
-                                                    put("text", result.benchmarkMicros?.microseconds?.toString())
-                                                    put("micros", result.benchmarkMicros)
-                                                    put(
-                                                        "millis",
-                                                        result.benchmarkMicros?.toBigDecimal()?.movePointLeft(3)
-                                                            ?.toDouble()
+            put("years", buildJsonObject {
+                get().groupBy { it.year }.mapValues { (year, days) ->
+                    put(year.toString(), buildJsonObject {
+                        put("days", buildJsonObject {
+                            days.groupBy { it.day }.mapValues { (_, parts) ->
+                                parts.groupBy { it.part }
+                            }.entries.forEach { (day, parts) ->
+                                put(day.toString(), buildJsonObject {
+                                    put("parts", buildJsonObject {
+                                        parts.entries.forEach { (part, results) ->
+                                            put(part.toString(), buildJsonArray {
+                                                results.forEach { result ->
+                                                    add(
+                                                        buildJsonObject {
+                                                            put("benchmark", buildJsonObject {
+                                                                put(
+                                                                    "text",
+                                                                    result.benchmarkMicros?.microseconds?.toString()
+                                                                )
+                                                                put("micros", result.benchmarkMicros)
+                                                                put(
+                                                                    "millis",
+                                                                    result.benchmarkMicros?.toBigDecimal()
+                                                                        ?.movePointLeft(3)
+                                                                        ?.toDouble()
+                                                                )
+                                                                put("iterations", result.benchmarkIterations)
+                                                            })
+                                                            put("timestamp", result.timestamp)
+                                                        }
                                                     )
-                                                    put("iterations", result.benchmarkIterations)
-                                                })
-                                                put("timestamp", result.timestamp)
-                                            }
-                                        )
-                                    }
+                                                }
+                                            })
+                                        }
+                                    })
                                 })
                             }
                         })
@@ -124,8 +146,12 @@ object Results {
         }
     }
 
-    fun findVerifiedOrNull(day: Int, part: Int): Result? {
-        return get().find { it.day == day && it.part == part && it.verified }
+    fun findVerifiedOrNull(puzzle: PuzzleIdentity): Result? {
+        return findVerifiedOrNull(puzzle.year, puzzle.day, puzzle.part)
+    }
+
+    private fun findVerifiedOrNull(year: Int, day: Int, part: Int): Result? {
+        return get(year).find { it.day == day && it.part == part && it.verified }
     }
 
     suspend fun send(result: RunData) {
@@ -160,16 +186,16 @@ object Results {
         val last =
             results.filter { it.result != null && !results.any { otherResult -> otherResult.verified && otherResult.cookie == it.cookie && otherResult.day == it.day && otherResult.part == it.part } }
                 .maxByOrNull { it.timestamp }
-                ?: return logger.log { "no results to verify" }
+                ?: return logger.log(AocLogger.Main) { "no results to verify" }
         val timestamp = Instant.ofEpochMilli(last.timestamp)
+        val identity = last.identity()
         logger.log(
-            last.day,
-            last.part
+            identity
         ) { "verifying last result ${resultTheme(last.result!!)} from ${(System.currentTimeMillis() - timestamp.toEpochMilli()).milliseconds} ago" }
         val good = Terminal().prompt(
-            logger.formatLineAsLog(last.day, last.part, "is this correct?"),
+            AocLogger.formatLineAsLog(last.year, last.day, last.part, "is this correct?"),
             choices = listOf("yes", "no", "y", "n"),
-            invalidChoiceMessage = logger.formatLineAsLog(last.day, last.part, "invalid choice")
+            invalidChoiceMessage = AocLogger.formatLineAsLog(last.year, last.day, last.part, "invalid choice")
         ) {
             when (it) {
                 "yes", "y" -> {
@@ -195,20 +221,50 @@ object Results {
                     verified = true
                 )
             )
-            logger.log(last.day, last.part) { "verified last result ${resultTheme(last.result!!)}" }
+            logger.log(identity) { "verified last result ${resultTheme(last.result!!)}" }
         } else {
-            logger.log(last.day, last.part) { "not verified" }
+            logger.log(identity) { "not verified" }
         }
     }
 
     sealed class RunData(
+        private val year: Int,
         private val day: Int,
         private val part: Int,
     ) {
-        fun toIdentifiedPart() = IdentifiedPart(day, part)
+        fun toIdentifiedPart() = PuzzleIdentity(year, day, part)
     }
 
-    class RunResult(val result: String, day: Int, part: Int) : RunData(day, part)
-    class BenchmarkResult(val duration: Duration, val iterations: Long, day: Int, part: Int) : RunData(day, part)
-    data class IdentifiedPart(val day: Int, val part: Int)
+    class RunResult(
+        val result: String,
+        year: Int,
+        day: Int,
+        part: Int
+    ) : RunData(
+        year = year,
+        day = day,
+        part = part
+    ) {
+        constructor(result: String, puzzle: PuzzleIdentity) : this(result, puzzle.year, puzzle.day, puzzle.part)
+    }
+
+    class BenchmarkResult(
+        val duration: Duration,
+        val iterations: Long,
+        year: Int,
+        day: Int,
+        part: Int
+    ) : RunData(
+        year = year,
+        day = day,
+        part = part
+    ) {
+        constructor(duration: Duration, iterations: Long, puzzle: PuzzleIdentity) : this(
+            duration,
+            iterations,
+            puzzle.year,
+            puzzle.day,
+            puzzle.part
+        )
+    }
 }

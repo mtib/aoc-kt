@@ -1,6 +1,7 @@
 package dev.mtib.aoc.benchmark
 
 import dev.mtib.aoc.util.AocLogger
+import dev.mtib.aoc.util.PuzzleIdentity
 import org.jetbrains.letsPlot.export.ggsave
 import org.jetbrains.letsPlot.geom.geomLine
 import org.jetbrains.letsPlot.label.labs
@@ -13,8 +14,7 @@ import kotlin.io.path.Path
 import kotlin.time.Duration
 
 class BenchmarkWindowPlotter(
-    private val day: Int,
-    private val part: Int,
+    private val puzzle: PuzzleIdentity,
     private val windowSize: Int,
     private val durations: List<Duration>
 ) {
@@ -24,7 +24,7 @@ class BenchmarkWindowPlotter(
 
     fun plot(skip: Int = 5) {
         if (durations.isEmpty()) {
-            logger.error { "not enough data points to plot" }
+            logger.error(puzzle = puzzle) { "not enough data points to plot" }
             return
         }
 
@@ -58,6 +58,10 @@ class BenchmarkWindowPlotter(
             }
         }
 
+        val year = puzzle.year
+        val day = puzzle.day
+        val part = puzzle.part
+
         val plot = letsPlot(data) + geomLine(
             color = "#22a",
             alpha = 0.8,
@@ -79,18 +83,18 @@ class BenchmarkWindowPlotter(
             panelGridMajorY = elementText(color = "#333"),
             plotBackground = elementRect(fill = "#150808"),
         ) + labs(
-            title = "Day $day part $part benchmark",
+            title = "AoC $year day $day part $part benchmark",
             subtitle = "Window size: $windowSize, min: ${durations.minOrNull()}, max: ${durations.maxOrNull()}",
             x = "Window end index",
             y = "Average time [ms]"
         )
 
-        val filename = "benchmark_${day.toString().padStart(2, '0')}_$part.png"
-        logger.log(day, part) { "saving benchmark window plot to $filename" }
+        val filename = "benchmark_${year}_${day.toString().padStart(2, '0')}_$part.png"
+        logger.log(puzzle) { "saving benchmark window plot to $filename" }
 
         ggsave(
             plot = plot,
-            filename = "benchmark_${day.toString().padStart(2, '0')}_$part.png",
+            filename = filename,
             path = Path(System.getenv("PWD")!!).resolve(Path("./src/main/resources")).toString()
         )
     }

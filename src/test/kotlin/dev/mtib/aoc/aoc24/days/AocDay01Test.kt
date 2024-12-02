@@ -1,6 +1,5 @@
-package dev.mtib.aoc24.days
+package dev.mtib.aoc.aoc24.days
 
-import dev.mtib.aoc.aoc24.days.AocDay01
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 

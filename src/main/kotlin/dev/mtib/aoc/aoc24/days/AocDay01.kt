@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
-object AocDay01 : AocDay(1) {
+object AocDay01 : AocDay(2024, 1) {
     private val logger = AocLogger.new { }
     private fun CoroutineScope.readChannels(): Pair<Channel<Int>, Channel<Int>> {
         val left = Channel<Int>(Channel.UNLIMITED)

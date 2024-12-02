@@ -5,7 +5,7 @@ import dev.mtib.aoc.util.Results
 
 private val logger = AocLogger.new {}
 fun main() {
-    logger.log { "verify tool will mark the last result as verified" }
+    logger.log(AocLogger.Main) { "verify tool will mark the last result as verified" }
     Results.verifyLast()
-    logger.log { "done" }
+    logger.log(AocLogger.Main) { "done" }
 }

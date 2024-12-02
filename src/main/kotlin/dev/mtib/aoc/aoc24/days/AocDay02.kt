@@ -4,7 +4,7 @@ import dev.mtib.aoc.day.AocDay
 import kotlinx.coroutines.coroutineScope
 import kotlin.math.abs
 
-object AocDay02 : AocDay(2) {
+object AocDay02 : AocDay(2024, 2) {
     private fun List<Int>.isTotallySafe(): Boolean {
         for (v in indices) {
             val last2 = getOrNull(v - 2)

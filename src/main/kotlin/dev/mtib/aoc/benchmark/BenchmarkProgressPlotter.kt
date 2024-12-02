@@ -1,6 +1,7 @@
 package dev.mtib.aoc.benchmark
 
 import dev.mtib.aoc.util.AocLogger
+import dev.mtib.aoc.util.Day
 import dev.mtib.aoc.util.Results
 import dev.mtib.aoc.util.Results.toInstant
 import org.jetbrains.letsPlot.export.ggsave
@@ -17,7 +18,7 @@ import java.util.TimeZone
 import kotlin.io.path.Path
 
 class BenchmarkProgressPlotter(
-    private val day: Int,
+    private val day: Day,
 ) {
     companion object {
         private val logger = AocLogger.new { }
@@ -25,8 +26,8 @@ class BenchmarkProgressPlotter(
 
     fun plot() {
         val results = mapOf(
-            1 to Results.getProgress(day, 1),
-            2 to Results.getProgress(day, 2)
+            1 to Results.getProgress(day.PuzzleIdentity(1)),
+            2 to Results.getProgress(day.PuzzleIdentity(2)),
         )
 
         val validated = results.mapValues { partResults ->
@@ -125,12 +126,12 @@ class BenchmarkProgressPlotter(
             panelGridMajorY = elementText(color = "#333"),
             plotBackground = elementRect(fill = "#150808"),
         ) + labs(
-            title = "Day $day benchmark progress",
+            title = "AoC ${day.year} day ${day.toInt()} benchmark progress",
             x = "Time",
             y = "Runtime [ms]"
         )
 
-        val filename = "benchmark_${day.toString().padStart(2, '0')}_progress.png"
+        val filename = "benchmark_${day.year}_${day.toInt().toString().padStart(2, '0')}_progress.png"
         logger.log(day) { "saving benchmark progress plot to $filename" }
 
         ggsave(
