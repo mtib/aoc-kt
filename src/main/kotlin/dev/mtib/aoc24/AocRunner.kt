@@ -8,6 +8,7 @@ import dev.mtib.aoc24.benchmark.BenchmarkWindowPlotter
 import dev.mtib.aoc24.days.AocDay
 import dev.mtib.aoc24.days.PuzzleExecutor
 import dev.mtib.aoc24.util.AocLogger
+import dev.mtib.aoc24.util.AocLogger.Companion.resultTheme
 import dev.mtib.aoc24.util.Results
 import dev.mtib.aoc24.util.Results.BenchmarkResult
 import dev.mtib.aoc24.util.Results.RunResult
@@ -105,7 +106,6 @@ suspend fun runResults(day: Int, part: Int, block: suspend () -> String) {
         val result = measureTimedValue { block() }
         val knownResult = Results.findVerifiedOrNull(day, part)
 
-        val resultTheme = TextStyles.bold + TextColors.brightWhite
         val styledResult =
             resultTheme(if (System.getenv("CI") == null) result.value else "*".repeat(result.value.length))
         if (knownResult != null) {

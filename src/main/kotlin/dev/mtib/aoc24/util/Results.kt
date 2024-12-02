@@ -1,5 +1,9 @@
 package dev.mtib.aoc24.util
 
+import com.github.ajalt.mordant.terminal.ConversionResult
+import com.github.ajalt.mordant.terminal.Terminal
+import com.github.ajalt.mordant.terminal.prompt
+import dev.mtib.aoc24.util.AocLogger.Companion.resultTheme
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.toList
 import kotlinx.serialization.Serializable
@@ -10,12 +14,14 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.math.BigDecimal
 import java.nio.file.NoSuchFileException
+import java.time.Instant
 import java.time.ZoneId
 import kotlin.io.path.Path
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.microseconds
+import kotlin.time.Duration.Companion.milliseconds
 
 object Results {
     private val logger = AocLogger.new { }
@@ -24,7 +30,7 @@ object Results {
     private val runDataChannel = Channel<RunData>(Channel.UNLIMITED)
 
     @Serializable
-    class Result(
+    data class Result(
         val day: Int,
         val part: Int,
         val benchmarkMicros: Long? = null,
@@ -35,7 +41,7 @@ object Results {
         val verified: Boolean = false,
     )
 
-    fun Result.toInstant() = java.time.Instant.ofEpochMilli(timestamp)!!
+    fun Result.toInstant() = Instant.ofEpochMilli(timestamp)!!
     private fun get(): List<Result> {
         return try {
             path.readText().let { json ->
@@ -57,7 +63,9 @@ object Results {
     fun save(result: Result) {
         val current = get()
 
-        path.writeText(json.encodeToString(current + result))
+        path.writeText(json.encodeToString((current.filter {
+            it.day != result.day || it.part != result.part || it.timestamp != result.timestamp || it.cookie != result.cookie
+        } + result).sortedWith(compareBy({ it.timestamp }, { it.day }, { it.part }))))
     }
 
     /**
@@ -68,7 +76,7 @@ object Results {
             put("timestamp_epoch_millis", startTime)
             put(
                 "timestamp_cet",
-                java.time.Instant.ofEpochMilli(startTime).atZone(ZoneId.of("Europe/Copenhagen")).toString()
+                Instant.ofEpochMilli(startTime).atZone(ZoneId.of("Europe/Copenhagen")).toString()
             )
             put("memory_mb", Runtime.getRuntime().totalMemory().toBigDecimal().divide(BigDecimal("1024").pow(2)))
             put("cpu_cores", Runtime.getRuntime().availableProcessors())
@@ -145,6 +153,52 @@ object Results {
         }
         saveCleaned()
         logger.log { "saved results" }
+    }
+
+    fun verifyLast() {
+        val results = get()
+        val last =
+            results.filter { it.result != null && !results.any { otherResult -> otherResult.verified && otherResult.cookie == it.cookie && otherResult.day == it.day && otherResult.part == it.part } }
+                .maxByOrNull { it.timestamp }
+                ?: return logger.log { "no results to verify" }
+        val timestamp = Instant.ofEpochMilli(last.timestamp)
+        logger.log(
+            last.day,
+            last.part
+        ) { "verifying last result ${resultTheme(last.result!!)} from ${(System.currentTimeMillis() - timestamp.toEpochMilli()).milliseconds} ago" }
+        val good = Terminal().prompt(
+            logger.formatLineAsLog(last.day, last.part, "is this correct?"),
+            choices = listOf("yes", "no", "y", "n"),
+            invalidChoiceMessage = logger.formatLineAsLog(last.day, last.part, "invalid choice")
+        ) {
+            when (it) {
+                "yes", "y" -> {
+                    ConversionResult.Valid("yes")
+                }
+
+                "no", "n" -> {
+                    ConversionResult.Valid("no")
+                }
+
+                else -> ConversionResult.Invalid("invalid choice")
+            }
+        }.let {
+            when (it) {
+                "yes" -> true
+                "no" -> false
+                else -> false
+            }
+        }
+        if (good) {
+            save(
+                last.copy(
+                    verified = true
+                )
+            )
+            logger.log(last.day, last.part) { "verified last result ${resultTheme(last.result!!)}" }
+        } else {
+            logger.log(last.day, last.part) { "not verified" }
+        }
     }
 
     sealed class RunData(

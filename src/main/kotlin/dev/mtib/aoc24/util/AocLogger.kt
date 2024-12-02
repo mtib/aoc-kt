@@ -40,11 +40,15 @@ class AocLogger private constructor(
         }
     }
 
+    fun formatLineAsLog(day: Int? = null, part: Int? = null, line: String): String {
+        return "${getStyledPrefix(day, part)}${TextColors.white(" $line")}"
+    }
+
     fun log(day: Int? = aocDay?.day, part: Int? = aocDay?.partMode, message: () -> String) {
         if (aocDay?.benchmarking == true) {
             return
         }
-        terminal.println("${getStyledPrefix(day, part)}${TextColors.white(" ${message()}")}")
+        terminal.println(formatLineAsLog(day, part, message()))
     }
 
     suspend fun logSuspend(day: Int? = aocDay?.day, part: Int? = aocDay?.partMode, message: suspend () -> String) {
@@ -72,5 +76,7 @@ class AocLogger private constructor(
                 }
             ).apply { block() }
         }
+
+        val resultTheme = TextStyles.bold + TextColors.brightWhite
     }
 }
