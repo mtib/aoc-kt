@@ -1,6 +1,7 @@
 package dev.mtib.aoc.aoc23.days
 
 import dev.mtib.aoc.aoc23.util.AbstractDay
+import dev.mtib.aoc23.utils.lcm
 
 object Day8 : AbstractDay(8) {
     override fun solvePart1(input: Array<String>): String {
@@ -29,27 +30,6 @@ object Day8 : AbstractDay(8) {
             stepsTaken += 1
         }
         return stepsTaken.toString()
-    }
-
-    fun lcm(a: Long, b: Long): Long {
-        var s = 0L
-        var r = b
-        var old_s = 1L
-        var old_r = a
-        var temp: Long
-        var bezout_t = 0L
-
-        while (r != 0L) {
-            val quotient = old_r / r;
-            temp = r;
-            r = old_r - quotient * r;
-            old_r = temp;
-            temp = s;
-            s = old_s - quotient * s;
-            old_s = temp;
-        }
-
-        return (a * b) / old_r
     }
 
     override fun solvePart2(input: Array<String>): String {

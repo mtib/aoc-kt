@@ -5,10 +5,10 @@ import dev.mtib.aoc.util.AocLogger
 import org.jgrapht.alg.StoerWagnerMinimumCut
 import org.jgrapht.graph.SimpleGraph
 
-class Day25 : AbstractDay(25) {
+object Day25 : AbstractDay(25) {
 
-    data class Node(val name: String)
-    data class Edge private constructor(val from: Node, val to: Node) {
+    private data class Node(val name: String)
+    private data class Edge private constructor(val from: Node, val to: Node) {
         companion object {
             operator fun invoke(from: Node, to: Node): Edge {
                 return if (from.name < to.name) {
@@ -20,10 +20,7 @@ class Day25 : AbstractDay(25) {
         }
     }
 
-    companion object {
-        private val logger = AocLogger.new {}
-    }
-
+    private val logger = AocLogger.new {}
     override fun solvePart1(input: Array<String>): Any? {
         val nodes = mutableSetOf<Node>()
         val edges = mutableSetOf<Edge>()

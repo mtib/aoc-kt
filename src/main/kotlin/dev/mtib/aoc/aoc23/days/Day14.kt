@@ -3,12 +3,8 @@ package dev.mtib.aoc.aoc23.days
 import dev.mtib.aoc.aoc23.util.AbstractDay
 import dev.mtib.aoc.util.AocLogger
 
-class Day14 : AbstractDay(14) {
-
-    companion object {
-        private val logger = AocLogger.new {}
-    }
-
+object Day14 : AbstractDay(14) {
+    private val logger = AocLogger.new {}
     private fun computeLoad(input: Array<Array<Char>>): Int = input.withIndex().sumOf { (line, row) ->
         row.count { it == 'O' } * (input.size - line)
     }
@@ -22,7 +18,7 @@ class Day14 : AbstractDay(14) {
 
     private val cycles = 1000000000L
 
-    enum class Direction {
+    private enum class Direction {
         UP, DOWN, LEFT, RIGHT
     }
 
@@ -79,7 +75,7 @@ class Day14 : AbstractDay(14) {
         return input
     }
 
-    fun Array<Array<Char>>.hash(): Int {
+    private fun Array<Array<Char>>.hash(): Int {
         return this.sumOf { it.contentHashCode() }
     }
 

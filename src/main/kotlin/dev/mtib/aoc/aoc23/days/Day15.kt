@@ -3,11 +3,8 @@ package dev.mtib.aoc.aoc23.days
 import dev.mtib.aoc.aoc23.util.AbstractDay
 import dev.mtib.aoc.util.AocLogger
 
-class Day15 : AbstractDay(15) {
-    companion object {
-        private val logger = AocLogger.new {}
-    }
-
+object Day15 : AbstractDay(15) {
+    private val logger = AocLogger.new {}
     private fun String.hash(): Int {
         return this.fold(0) { acc, it -> ((acc + it.code) * 17) % 256 }
     }

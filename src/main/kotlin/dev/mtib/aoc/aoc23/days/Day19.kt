@@ -3,13 +3,10 @@ package dev.mtib.aoc.aoc23.days
 import dev.mtib.aoc.aoc23.util.AbstractDay
 import dev.mtib.aoc.util.AocLogger
 
-class Day19 : AbstractDay(19) {
+object Day19 : AbstractDay(19) {
+    private val logger = AocLogger.new {}
 
-    companion object {
-        private val logger = AocLogger.new {}
-    }
-
-    enum class Category(val char: Char) {
+    private enum class Category(val char: Char) {
         X('x'), M('m'), A('a'), S('s');
 
         companion object {
@@ -19,7 +16,7 @@ class Day19 : AbstractDay(19) {
         }
     }
 
-    enum class Operator(val char: Char) {
+    private enum class Operator(val char: Char) {
         GT('>'), LT('<');
 
         companion object {
@@ -29,8 +26,8 @@ class Day19 : AbstractDay(19) {
         }
     }
 
-    data class Condition(val category: Category, val operator: Operator, val value: Int)
-    data class RuleName(val name: String) {
+    private data class Condition(val category: Category, val operator: Operator, val value: Int)
+    private data class RuleName(val name: String) {
         val accepted: Boolean
             get() = name == "A"
         val rejected: Boolean
@@ -39,7 +36,11 @@ class Day19 : AbstractDay(19) {
             get() = name == "in"
     }
 
-    data class Rule(val name: RuleName, val conditions: List<Pair<Condition, RuleName>>, val fallback: RuleName) {
+    private data class Rule(
+        val name: RuleName,
+        val conditions: List<Pair<Condition, RuleName>>,
+        val fallback: RuleName
+    ) {
 
         val accepted: Boolean
             get() = name.accepted
@@ -49,7 +50,7 @@ class Day19 : AbstractDay(19) {
             get() = name.start
     }
 
-    data class Part(val properties: Map<Category, Long>)
+    private data class Part(val properties: Map<Category, Long>)
 
     private fun parseRules(input: Array<String>): Map<RuleName, Rule> {
         return (input.takeWhile { it != "" }.map { ruleString ->

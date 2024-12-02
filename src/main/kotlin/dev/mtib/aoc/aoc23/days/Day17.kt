@@ -4,12 +4,10 @@ import dev.mtib.aoc.aoc23.util.AbstractDay
 import dev.mtib.aoc.util.AocLogger
 import java.util.PriorityQueue
 
-class Day17 : AbstractDay(17) {
-    companion object {
-        private val logger = AocLogger.new {}
-    }
+object Day17 : AbstractDay(17) {
+    private val logger = AocLogger.new {}
 
-    data class Position(val x: Int, val y: Int) {
+    private data class Position(val x: Int, val y: Int) {
         operator fun plus(other: Position): Position {
             return Position(x + other.x, y + other.y)
         }

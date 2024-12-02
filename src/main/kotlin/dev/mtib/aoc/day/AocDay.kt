@@ -120,5 +120,5 @@ open class AocDay(
         throw NotImplementedError()
     }
 
-    open suspend fun setup() {}
+    open suspend fun teardown() {}
 }

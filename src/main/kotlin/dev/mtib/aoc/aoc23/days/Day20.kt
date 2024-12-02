@@ -4,16 +4,14 @@ import dev.mtib.aoc.aoc23.util.AbstractDay
 import dev.mtib.aoc.util.AocLogger
 import dev.mtib.aoc23.utils.lcm
 
-class Day20 : AbstractDay(20) {
-    enum class Pulse {
+object Day20 : AbstractDay(20) {
+    private enum class Pulse {
         High, Low;
     }
 
-    companion object {
-        private val logger = AocLogger.new {}
-    }
+    private val logger = AocLogger.new {}
 
-    class ExecutionContext {
+    private class ExecutionContext {
         var executionCount: Long = 0
         val sentPulses = mutableMapOf(
             Pulse.High to 0L,
@@ -36,7 +34,7 @@ class Day20 : AbstractDay(20) {
         }
     }
 
-    abstract class Module(val executionContext: ExecutionContext, val name: String = "unknown") {
+    private abstract class Module(val executionContext: ExecutionContext, val name: String = "unknown") {
         val inputs = mutableListOf<Module>()
         val outputs = mutableListOf<Module>()
 
@@ -103,7 +101,7 @@ class Day20 : AbstractDay(20) {
         }
     }
 
-    class FlipFlop(executionContext: ExecutionContext, name: String) : Module(executionContext, name) {
+    private class FlipFlop(executionContext: ExecutionContext, name: String) : Module(executionContext, name) {
         var state = false
         override fun handleHigh(origin: Module) {
         }
@@ -114,7 +112,7 @@ class Day20 : AbstractDay(20) {
         }
     }
 
-    class Nop(executionContext: ExecutionContext, name: String) : Module(executionContext, name) {
+    private class Nop(executionContext: ExecutionContext, name: String) : Module(executionContext, name) {
         override fun handleHigh(origin: Module) {
         }
 
@@ -122,7 +120,7 @@ class Day20 : AbstractDay(20) {
         }
     }
 
-    class Conjunction(executionContext: ExecutionContext, name: String) : Module(executionContext, name) {
+    private class Conjunction(executionContext: ExecutionContext, name: String) : Module(executionContext, name) {
         val map = mutableMapOf<Module, Pulse>()
         override fun handleHigh(origin: Module) {
             map[origin] = Pulse.High
@@ -145,7 +143,7 @@ class Day20 : AbstractDay(20) {
         }
     }
 
-    class Broadcaster(executionContext: ExecutionContext, name: String) : Module(executionContext, name) {
+    private class Broadcaster(executionContext: ExecutionContext, name: String) : Module(executionContext, name) {
         override fun handleHigh(origin: Module) {
             send(Pulse.High)
         }
@@ -155,7 +153,7 @@ class Day20 : AbstractDay(20) {
         }
     }
 
-    class Button(executionContext: ExecutionContext) : Module(executionContext, "button") {
+    private class Button(executionContext: ExecutionContext) : Module(executionContext, "button") {
         override fun handleHigh(origin: Module) {
         }
 

@@ -4,9 +4,9 @@ import dev.mtib.aoc.aoc23.util.AbstractDay
 import dev.mtib.aoc.util.AocLogger
 import kotlin.math.absoluteValue
 
-class Day18 : AbstractDay(18) {
+object Day18 : AbstractDay(18) {
 
-    enum class Direction(val char: Char) {
+    private enum class Direction(val char: Char) {
         Up('U'),
         Right('R'),
         Down('D'),
@@ -19,11 +19,9 @@ class Day18 : AbstractDay(18) {
         }
     }
 
-    companion object {
-        private val logger = AocLogger.new {}
-    }
+    private val logger = AocLogger.new {}
 
-    data class DigInstruction(val direction: Direction, val steps: Int, val color: String) {
+    private data class DigInstruction(val direction: Direction, val steps: Int, val color: String) {
         companion object {
             fun fromLine(string: String): DigInstruction {
                 val parts = string.split(" ")
@@ -47,7 +45,7 @@ class Day18 : AbstractDay(18) {
         }
     }
 
-    fun shoelace(points: List<Pair<Number, Number>>): Long {
+    private fun shoelace(points: List<Pair<Number, Number>>): Long {
         val points = points.map { (x, y) -> Pair(x.toLong(), y.toLong()) }
         val area = points.mapIndexed { index, (x, y) ->
             val (nextX, nextY) = points[(index + 1) % points.size]
@@ -61,7 +59,7 @@ class Day18 : AbstractDay(18) {
     }
 
     /** only returns inner points */
-    fun outerFloodFill(dug: Collection<Pair<Int, Int>>): Set<Pair<Int, Int>> {
+    private fun outerFloodFill(dug: Collection<Pair<Int, Int>>): Set<Pair<Int, Int>> {
         val minX = dug.minOf { it.first }
         val maxX = dug.maxOf { it.first }
         val minY = dug.minOf { it.second }

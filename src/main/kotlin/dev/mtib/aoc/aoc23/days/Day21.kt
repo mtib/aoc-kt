@@ -2,7 +2,7 @@ package dev.mtib.aoc.aoc23.days
 
 import dev.mtib.aoc.aoc23.util.AbstractDay
 
-class Day21 : AbstractDay(21) {
+object Day21 : AbstractDay(21) {
 
     override fun solvePart1(input: Array<String>): Any? {
         val start = input.withIndex().find { 'S' in it.value }!!.let { Pair(it.value.indexOf('S'), it.index) }

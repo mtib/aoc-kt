@@ -3,12 +3,10 @@ package dev.mtib.aoc.aoc23.days
 import dev.mtib.aoc.aoc23.util.AbstractDay
 import dev.mtib.aoc.util.AocLogger
 
-class Day22 : AbstractDay(22) {
-    companion object {
-        private val logger = AocLogger.new {}
-    }
+object Day22 : AbstractDay(22) {
+    private val logger = AocLogger.new {}
 
-    data class Point3D(val x: Long, val y: Long, val z: Long) {
+    private data class Point3D(val x: Long, val y: Long, val z: Long) {
         companion object {
             fun fromString(s: String): Point3D {
                 val (x, y, z) = s.split(",").map { it.toLong() }
@@ -17,7 +15,7 @@ class Day22 : AbstractDay(22) {
         }
     }
 
-    data class Brick(val start: Point3D, val end: Point3D) {
+    private data class Brick(val start: Point3D, val end: Point3D) {
         companion object {
             fun fromString(s: String): Brick {
                 val (start, end) = s.split("~")
@@ -67,7 +65,7 @@ class Day22 : AbstractDay(22) {
         }
     }
 
-    fun settleBricks(bricks: List<Brick>): List<Brick> {
+    private fun settleBricks(bricks: List<Brick>): List<Brick> {
         val heightMap = bricks.groupBy { it.start.z }
         val settled = mutableListOf<Brick>()
         heightMap.entries.sortedBy { it.key }.forEach {
@@ -106,10 +104,6 @@ class Day22 : AbstractDay(22) {
 
         for (brick in resolved) {
             val stabilisers = brick.stabilisers(resolved)
-            logger.log {
-                require(stabilisers.isNotEmpty() || brick.start.z == 1L) { "No stabilisers for $brick" }
-                "$brick -> $stabilisers"
-            }
             if (stabilisers.size == 1) {
                 soloStabilisers.add(stabilisers.first())
             }

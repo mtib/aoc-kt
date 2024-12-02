@@ -367,7 +367,7 @@ object Day12 : AbstractDay(12) {
         }
     }
 
-    override suspend fun setup() {
+    override suspend fun teardown() {
         cache.clear() // To be fair for timing.
     }
 }

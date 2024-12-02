@@ -3,15 +3,13 @@ package dev.mtib.aoc.aoc23.days
 import dev.mtib.aoc.aoc23.util.AbstractDay
 import dev.mtib.aoc.util.AocLogger
 
-class Day23 : AbstractDay(23) {
-    companion object {
-        private val slopeChars = setOf('^', '>', 'v', '<')
-        private val spaceChar = '.'
-        private val wallChar = '#'
-        private val logger = AocLogger.new {}
-    }
+object Day23 : AbstractDay(23) {
+    private val slopeChars = setOf('^', '>', 'v', '<')
+    private val spaceChar = '.'
+    private val wallChar = '#'
+    private val logger = AocLogger.new {}
 
-    data class Point(val x: Int, val y: Int) {
+    private data class Point(val x: Int, val y: Int) {
         companion object {
             val cardinalDirections = listOf(
                 Point(0, -1),
@@ -60,7 +58,7 @@ class Day23 : AbstractDay(23) {
         }
     }
 
-    data class Area(val points: Set<Point>) {
+    private data class Area(val points: Set<Point>) {
         val entrySlopes = mutableMapOf<Point, Area>()
         val exitSlopes = mutableMapOf<Point, Area>()
 
@@ -96,7 +94,7 @@ class Day23 : AbstractDay(23) {
         }
     }
 
-    fun floodFill(input: Array<String>, start: Point): Area {
+    private fun floodFill(input: Array<String>, start: Point): Area {
         val area = mutableSetOf<Point>()
         val toVisit = mutableListOf(start)
         while (toVisit.isNotEmpty()) {
@@ -114,7 +112,7 @@ class Day23 : AbstractDay(23) {
         return Area(area)
     }
 
-    data class AreaGraph(val areas: Set<Area>, val entry: Area, val exit: Area)
+    private data class AreaGraph(val areas: Set<Area>, val entry: Area, val exit: Area)
 
     private fun printInputWithPoints(input: Array<String>, points: Collection<Point>) {
         logger.log {
@@ -134,7 +132,7 @@ class Day23 : AbstractDay(23) {
         }
     }
 
-    fun buildAreaGraph(input: Array<String>, bidirectional: Boolean = false): AreaGraph {
+    private fun buildAreaGraph(input: Array<String>, bidirectional: Boolean = false): AreaGraph {
         val slopePositions = input.withIndex().flatMap { (y, line) ->
             line.withIndex().filter { (_, char) -> char in slopeChars }.map { (x, _) -> Point(x, y) }
         }
@@ -169,7 +167,7 @@ class Day23 : AbstractDay(23) {
             areas.last { it.points.any { point -> point.y == input.size - 1 } })
     }
 
-    fun tryGraphCombinationsForLongestPathLength(input: Array<String>): Int {
+    private fun tryGraphCombinationsForLongestPathLength(input: Array<String>): Int {
         val graph = buildAreaGraph(input)
 
         logger.log {
@@ -230,7 +228,7 @@ class Day23 : AbstractDay(23) {
         }.let { it.points.size } - 1
     }
 
-    fun isExitStillReachable(visitedAreas: List<Area>, graph: AreaGraph): Boolean {
+    private fun isExitStillReachable(visitedAreas: List<Area>, graph: AreaGraph): Boolean {
         val toVisit = mutableListOf(visitedAreas)
         while (toVisit.isNotEmpty()) {
             val extension = toVisit.removeFirst()!!
@@ -248,7 +246,7 @@ class Day23 : AbstractDay(23) {
         return false
     }
 
-    fun tryGraphCombinationsForLongestPathLengthPt2(input: Array<String>): Int {
+    private fun tryGraphCombinationsForLongestPathLengthPt2(input: Array<String>): Int {
         val graph = buildAreaGraph(input, bidirectional = true)
 
         data class State(val lastPoint: Point, val visitedAreas: List<Area>, val currentArea: Area)
@@ -333,6 +331,7 @@ class Day23 : AbstractDay(23) {
     }
 
     override fun solvePart2(input: Array<String>): Any? {
-        return tryGraphCombinationsForLongestPathLengthPt2(input)
+        // return tryGraphCombinationsForLongestPathLengthPt2(input)
+        return null
     }
 }

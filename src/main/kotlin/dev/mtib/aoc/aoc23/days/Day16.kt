@@ -4,9 +4,9 @@ import dev.mtib.aoc.aoc23.days.Day16.Cell.TileType
 import dev.mtib.aoc.aoc23.days.Day16.Cell.TileType.Companion.toTileType
 import dev.mtib.aoc.aoc23.util.AbstractDay
 
-class Day16 : AbstractDay(16) {
+object Day16 : AbstractDay(16) {
 
-    data class Cell(val tile: TileType, var energized: Boolean = false) {
+    private data class Cell(val tile: TileType, var energized: Boolean = false) {
         enum class TileType(val char: Char) {
             Empty('.'),
             HorizontalSplitter('-'),
@@ -43,7 +43,7 @@ class Day16 : AbstractDay(16) {
         }
     }
 
-    enum class Direction(val dx: Int, val dy: Int) {
+    private enum class Direction(val dx: Int, val dy: Int) {
         Up(0, -1),
         Right(1, 0),
         Down(0, 1),
@@ -65,13 +65,13 @@ class Day16 : AbstractDay(16) {
             get() = this == Up || this == Down
     }
 
-    data class Position(val x: Int, val y: Int) {
+    private data class Position(val x: Int, val y: Int) {
         fun move(direction: Direction): Position {
             return Position(x + direction.dx, y + direction.dy)
         }
     }
 
-    data class Beam(var position: Position, var direction: Direction)
+    private data class Beam(var position: Position, var direction: Direction)
 
     private fun simulate(
         input: Array<Array<Cell>>,
@@ -147,7 +147,7 @@ class Day16 : AbstractDay(16) {
         return simulate(parse(input)).sumOf { row -> row.count { it.energized } }
     }
 
-    fun bruteForcePart2(input: Array<String>): Int {
+    private fun bruteForcePart2(input: Array<String>): Int {
         class Guess(val position: Position, val direction: Direction)
 
         val map = parse(input)

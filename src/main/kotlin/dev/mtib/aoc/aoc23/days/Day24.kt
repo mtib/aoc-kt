@@ -3,9 +3,9 @@ package dev.mtib.aoc.aoc23.days
 import dev.mtib.aoc.aoc23.util.AbstractDay
 import java.math.BigInteger
 
-class Day24 : AbstractDay(24) {
-    data class Vec3(val x: BigInteger, val y: BigInteger, val z: BigInteger)
-    data class Hailstone(val pos: Vec3, val vel: Vec3) {
+object Day24 : AbstractDay(24) {
+    private data class Vec3(val x: BigInteger, val y: BigInteger, val z: BigInteger)
+    private data class Hailstone(val pos: Vec3, val vel: Vec3) {
         companion object {
             fun fromLine(s: String): Hailstone {
                 val (pos, vel) = s.split("@")
@@ -60,8 +60,8 @@ class Day24 : AbstractDay(24) {
         }
     }
 
-    val testAreaStart = "200000000000000".toBigInteger()
-    val testAreaEnd = "400000000000000".toBigInteger()
+    private val testAreaStart = "200000000000000".toBigInteger()
+    private val testAreaEnd = "400000000000000".toBigInteger()
     override fun solvePart1(input: Array<String>): Any? {
         val stones = input.map { Hailstone.fromLine(it) }
         val intersections = sequence {

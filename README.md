@@ -1,4 +1,9 @@
-# Advent of Code 2025
+# Advent of Code (Kotlin)
+
+Contains years:
+
+- 2023
+- 2024
 
 ## How to run
 

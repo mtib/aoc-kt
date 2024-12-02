@@ -142,7 +142,19 @@ class AocLogger private constructor(
             if (day != null && day !in 1..25) {
                 throw IllegalArgumentException("Day must be in 1..25: $day")
             }
-            return "${getStyledPrefix(year, day, part)}${TextColors.white(" $line")}"
+            val lines = line.split("\n").dropLastWhile { it.isBlank() }
+            return buildString {
+                append("${getStyledPrefix(year, day, part)}${TextColors.white(" ${lines[0]}")}")
+                if (lines.size > 1) {
+                    append("\n")
+                    for (i in 1 until lines.size) {
+                        append("${TextColors.gray("    ...    ")}${TextColors.white(" ${lines[i]}")}")
+                        if (i < lines.size - 1) {
+                            append("\n")
+                        }
+                    }
+                }
+            }
         }
 
         val resultTheme = TextStyles.bold + TextColors.brightWhite

@@ -137,7 +137,7 @@ suspend fun runDay(day: Day) {
                         {
                             block(aocDay)
                         },
-                        aocDay::setup,
+                        aocDay::teardown,
                     )
                 }
             }
@@ -153,10 +153,9 @@ suspend fun runDay(day: Day) {
 suspend fun runResults(
     puzzle: PuzzleIdentity,
     block: suspend () -> Any,
-    setup: suspend () -> Unit = {},
+    teardown: suspend () -> Unit = {},
 ) {
     try {
-        setup()
         val result = measureTimedValue { block().toString() }
         val knownResult = Results.findVerifiedOrNull(puzzle)
 
@@ -181,12 +180,13 @@ suspend fun runResults(
     } catch (e: AocDay.DayNotReleasedException) {
         logger.error(e = null, puzzle) { "not released yet, releasing in ${e.waitDuration}" }
     }
+    teardown()
 }
 
 suspend fun benchmark(
     puzzle: PuzzleIdentity,
     block: suspend () -> Any,
-    setup: suspend () -> Unit = {},
+    teardown: suspend () -> Unit = {},
 ) {
     try {
         val durations = mutableListOf<Duration>()
@@ -194,10 +194,10 @@ suspend fun benchmark(
         val startTime = System.currentTimeMillis()
         val benchmarkDuration = measureTime {
             while (System.currentTimeMillis() - startTime < timeout.inWholeMilliseconds && (durations.size < BENCHMARK_WINDOW * 20 || System.currentTimeMillis() - startTime < 1.seconds.inWholeMilliseconds)) {
-                setup()
                 measureTime { block() }.also {
                     durations.add(it)
                 }
+                teardown()
                 yield()
             }
         }
