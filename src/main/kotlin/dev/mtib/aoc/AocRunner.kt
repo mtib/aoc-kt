@@ -8,13 +8,14 @@ import dev.mtib.aoc.benchmark.BenchmarkWindowPlotter
 import dev.mtib.aoc.day.AocDay
 import dev.mtib.aoc.day.PuzzleExecutor
 import dev.mtib.aoc.util.AocLogger
-import dev.mtib.aoc.util.AocLogger.Companion.resultTheme
 import dev.mtib.aoc.util.Day
 import dev.mtib.aoc.util.PuzzleIdentity
 import dev.mtib.aoc.util.Results
 import dev.mtib.aoc.util.Results.BenchmarkResult
 import dev.mtib.aoc.util.Results.RunResult
 import dev.mtib.aoc.util.Year
+import dev.mtib.aoc.util.ciTimeout
+import dev.mtib.aoc.util.styleResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -128,9 +129,12 @@ suspend fun runDay(day: Day) {
             2 to PuzzleExecutor::part2,
         ).forEach { (part, block) ->
             aocDay.partMode = part
-            withContext(aocDay.pool) {
-                func(day.PuzzleIdentity(part)) {
-                    block(aocDay)
+            val puzzle = day.PuzzleIdentity(part)
+            ciTimeout(puzzle, 10.seconds) {
+                withContext(aocDay.pool) {
+                    func(day.PuzzleIdentity(part)) {
+                        block(aocDay)
+                    }
                 }
             }
             aocDay.partMode = null
@@ -147,14 +151,13 @@ suspend fun runResults(puzzle: PuzzleIdentity, block: suspend () -> String) {
         val result = measureTimedValue { block() }
         val knownResult = Results.findVerifiedOrNull(puzzle)
 
-        val styledResult =
-            resultTheme(if (System.getenv("CI") == null) result.value else "*".repeat(result.value.length))
+        val styledResult = styleResult(result.value)
         if (knownResult != null) {
             if (knownResult.result != result.value) {
                 logger.error(
                     e = null,
                     puzzle = puzzle,
-                ) { "found conflicting solution $styledResult (expected ${resultTheme(knownResult.result ?: "???")}) in ${result.duration}" }
+                ) { "found conflicting solution $styledResult (expected ${styleResult(knownResult.result ?: "???")}) in ${result.duration}" }
             } else {
                 logger.log(
                     puzzle,
