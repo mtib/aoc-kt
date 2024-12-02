@@ -16,7 +16,7 @@ class AocDay02Test : FunSpec({
             1 3 6 7 9
         """.trimIndent()
         ) {
-            part1() shouldBe "2"
+            part1() shouldBe 2
         }
     }
 
@@ -31,7 +31,7 @@ class AocDay02Test : FunSpec({
             1 3 6 7 9
         """.trimIndent()
         ) {
-            part2() shouldBe "4"
+            part2() shouldBe 4
         }
     }
 })
