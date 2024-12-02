@@ -5,6 +5,7 @@ on:
       - main
     paths:
       - 'src/**'
+      - '.github/workflows/run.yaml'
 
 jobs:
   deploy:
