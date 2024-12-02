@@ -25,7 +25,7 @@ jobs:
           SESSION: ${{ secrets.SESSION }}
       - run: |
           cp build/libs/*-all.jar src/main/resources/.
-          cp build/libs/*-all.jar src/main/resource/aoc-kt-latest-all.jar
+          cp build/libs/*-all.jar src/main/resources/aoc-kt-latest-all.jar
           rm src/main/resources/day*.txt src/main/resources/results.json src/main/resources/.gitignore src/main/resources/*_progress.png
       - uses: idlefingers/do-space-sync-action@master
         with:
