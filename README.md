@@ -11,7 +11,7 @@ SESSION="<your session cookie>" java \
   -jar build/libs/aoc24-0.1.0-all.jar all
 ```
 
-The jar file is also available [here](https://aoc24.fra1.cdn.digitaloceanspaces.com/aoc24-0.1.0-all.jar).
+The jar file is also available [here](https://aoc24.fra1.cdn.digitaloceanspaces.com/aoc-kt-latest-all.jar).
 
 Alternatively, to run a specific day or set of days:
 

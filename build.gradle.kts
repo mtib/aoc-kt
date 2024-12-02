@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.mtib.aoc"
-version = "0.1.0"
+version = "0.24.0"
 
 repositories {
     mavenCentral()
