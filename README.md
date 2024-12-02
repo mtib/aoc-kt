@@ -37,8 +37,8 @@ java -jar build/libs/aoc24-0.1.0-all.jar 2024:all
 
 ## How to use
 
-1. Create a file like [AocDay01.kt](src/main/kotlin/dev/mtib/aoc/aoc24/days/AocDay01.kt) matching the day number (
-   e.g. `AocDay05.kt` for day 5).
+1. Create a file like [AocDay01.kt](src/main/kotlin/dev/mtib/aoc/aoc24/days/AocDay01.kt)
+   extending [AocDay](src/main/kotlin/dev/mtib/aoc/day/AocDay.kt).
 2. Overwrite the `part1` and `part2` methods with your implementation, returning the solution as a String.
 3. Run the application with the command above, replacing `<day>` with the day number, or just running with `latest`, to
    run the most recent day.
@@ -81,8 +81,9 @@ Benchmark results run on GitHub Actions can be
 found [here](https://aoc24.fra1.cdn.digitaloceanspaces.com/results_cleaned.json). As well as plots for the performance
 of each part:
 
-![Day 1](https://aoc24.fra1.cdn.digitaloceanspaces.com/benchmark_01_1.png)
+![Day 1](https://aoc24.fra1.cdn.digitaloceanspaces.com/benchmark_2024_01_1.png)
 
 (These are updated after each push to the main branch. Available
-at `https://aoc24.fra1.cdn.digitaloceanspaces.com/benchmark_<day>_<part>.png`, with `<day>` and `<part>` being the
+at `https://aoc24.fra1.cdn.digitaloceanspaces.com/benchmark_<year>_<day>_<part>.png`, with `<day>` and `<part>` being
+the
 zero-padded day and single-digit part number respectively.)
