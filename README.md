@@ -2,18 +2,19 @@
 
 Contains years:
 
-- 2023
+- [2023](https://github.com/mtib/aoc23) (originally done stand-alone, now integrated here)
 - 2024
 
 ## How to run
 
 ```bash
 ./gradlew fatJar
+ln -s build/libs/aoc-kt-0.24.0-all.jar /build/libs/aoc-kt.jar
 SESSION="<your session cookie>" java \
   -Dorg.slf4j.simpleLogger.log.dev.mtib.aoc24.AocRunner=INFO \
   -Dorg.slf4j.simpleLogger.showThreadName=false \
   -Djava.awt.headless=true \
-  -jar build/libs/aoc24-0.1.0-all.jar all
+  -jar /build/libs/aoc-kt.jar all
 ```
 
 The jar file is also available [here](https://aoc24.fra1.cdn.digitaloceanspaces.com/aoc-kt-latest-all.jar).
@@ -22,27 +23,27 @@ Alternatively, to run a specific day or set of days:
 
 ```bash
 # run day 5 of most recent year
-java -jar build/libs/aoc24-0.1.0-all.jar 5
+java -jar /build/libs/aoc-kt.jar 5
 
 # run day 1, 3, 24 of most recent year
-java -jar build/libs/aoc24-0.1.0-all.jar 1 3 24
+java -jar /build/libs/aoc-kt.jar 1 3 24
 
 # run all days
-java -jar build/libs/aoc24-0.1.0-all.jar all
+java -jar /build/libs/aoc-kt.jar all
 
 # run the latest day available
-java -jar build/libs/aoc24-0.1.0-all.jar latest
+java -jar /build/libs/aoc-kt.jar latest
 
 # run day 1 of 2024
-java -jar build/libs/aoc24-0.1.0-all.jar 2024:1
+java -jar /build/libs/aoc-kt.jar 2024:1
 
 # run all days of of 2024
-java -jar build/libs/aoc24-0.1.0-all.jar 2024:all
+java -jar /build/libs/aoc-kt.jar 2024:all
 ```
 
 ## How to use
 
-1. Create a file like [AocDay01.kt](src/main/kotlin/dev/mtib/aoc/aoc24/days/Day1.kt)
+1. Create a file like [Day1.kt](src/main/kotlin/dev/mtib/aoc/aoc24/days/Day1.kt)
    extending [AocDay](src/main/kotlin/dev/mtib/aoc/day/AocDay.kt).
 2. Overwrite the `part1` and `part2` methods with your implementation, returning the solution as a String.
 3. Run the application with the command above, replacing `<day>` with the day number, or just running with `latest`, to
@@ -55,7 +56,7 @@ Then run 10s worth of benchmarks for both parts and print their results.
 Inside `src/main/resources` you will find the input files for each day you've run, as well as plots for the benchmarks,
 as well as a results.json file with all results ever recorded.
 (You may want to mark a particular run as `"verified": true` in the results file to detect regressions (different
-results) in future runs.)
+results) in future runs. Or use the [VerifyTool](src/main/kotlin/dev/mtib/aoc/VerifyTool.kt) CLI to do this for you.)
 
 ## Tools & technologies
 
