@@ -185,7 +185,7 @@ object Results {
     fun verifyLast() {
         val results = get()
         val last =
-            results.filter { it.result != null && !results.any { otherResult -> otherResult.verified && otherResult.cookie == it.cookie && otherResult.day == it.day && otherResult.part == it.part } }
+            results.filter { it.result != null && !results.any { otherResult -> otherResult.verified && otherResult.cookie == it.cookie && otherResult.day == it.day && otherResult.part == it.part && otherResult.year == it.year } }
                 .maxByOrNull { it.timestamp }
                 ?: return logger.log(AocLogger.Main) { "no results to verify" }
         val timestamp = Instant.ofEpochMilli(last.timestamp)
