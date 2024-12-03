@@ -1,5 +1,6 @@
 package dev.mtib.aoc
 
+import arrow.core.Either
 import arrow.core.getOrElse
 import com.github.ajalt.mordant.rendering.TextColors
 import com.github.ajalt.mordant.rendering.TextStyles
@@ -130,15 +131,15 @@ suspend fun runDay(day: Day) {
         ).forEach { (part, block) ->
             aocDay.partMode = part
             val puzzle = day.PuzzleIdentity(part)
+            val runContext = RunContext(
+                puzzle = puzzle,
+                block = { block(aocDay) },
+                teardown = aocDay::teardown,
+                getHint = { result -> aocDay.compareHints(part, result) },
+            )
             ciTimeout(puzzle, 10.seconds) {
                 withContext(aocDay.pool) {
-                    func(
-                        day.PuzzleIdentity(part),
-                        {
-                            block(aocDay)
-                        },
-                        aocDay::teardown,
-                    )
+                    func(runContext)
                 }
             }
             aocDay.partMode = null
@@ -150,20 +151,33 @@ suspend fun runDay(day: Day) {
     }
 }
 
-suspend fun runResults(
-    puzzle: PuzzleIdentity,
-    block: suspend () -> Any,
-    teardown: suspend () -> Unit = {},
+private data class RunContext(
+    val puzzle: PuzzleIdentity,
+    val block: suspend () -> Any,
+    val teardown: suspend () -> Unit,
+    val getHint: (String) -> Either<AocDay.Hint.Direction, Unit>,
+)
+
+private class IncorrectResultException(val result: String, val knownConflict: AocDay.Hint.Direction) :
+    Exception("got $result but earlier hint says this result is $knownConflict")
+
+private suspend fun runResults(
+    context: RunContext,
 ) {
+    val (puzzle, block, teardown, getHint) = context
     try {
         val result = measureTimedValue { block().toString() }
         val knownResult = Results.findVerifiedOrNull(puzzle)
+        val hint = getHint(result.value)
 
+        hint.onLeft {
+            throw IncorrectResultException(result.value, it)
+        }
         val styledResult = styleResult(result.value)
+
         if (knownResult != null) {
             if (knownResult.result != result.value) {
                 logger.error(
-                    e = null,
                     puzzle = puzzle,
                 ) { "found conflicting solution $styledResult (expected ${styleResult(knownResult.result ?: "???")}) in ${result.duration}" }
             } else {
@@ -179,15 +193,17 @@ suspend fun runResults(
         logger.error(e = null, puzzle) { "not implemented" }
     } catch (e: AocDay.DayNotReleasedException) {
         logger.error(e = null, puzzle) { "not released yet, releasing in ${e.waitDuration}" }
+    } catch (e: IncorrectResultException) {
+        logger.error(puzzle = puzzle) { "got ${styleResult(e.result)} but earlier hint makes this result impossible (${e.knownConflict})" }
+    } finally {
+        teardown()
     }
-    teardown()
 }
 
-suspend fun benchmark(
-    puzzle: PuzzleIdentity,
-    block: suspend () -> Any,
-    teardown: suspend () -> Unit = {},
+private suspend fun benchmark(
+    context: RunContext,
 ) {
+    val (puzzle, block, teardown, getHint) = context
     try {
         val durations = mutableListOf<Duration>()
         val timeout = BENCHMARK_TIMEOUT_SECONDS.seconds

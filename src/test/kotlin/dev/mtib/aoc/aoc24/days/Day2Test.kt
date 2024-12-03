@@ -3,7 +3,7 @@ package dev.mtib.aoc.aoc24.days
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
-class AocDay02Test : FunSpec({
+class Day2Test : FunSpec({
 
     test("part1") {
         Day2.withInput(
