@@ -21,6 +21,8 @@ dependencies {
     implementation("io.arrow-kt:arrow-fx-coroutines:1.2.4")
     implementation("org.ojalgo:ojalgo:55.0.1")
 
+    implementation("redis.clients:jedis:5.2.0")
+
     implementation("org.reflections:reflections:0.10.2")
 
     implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.9.2")

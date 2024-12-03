@@ -8,10 +8,11 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.toList
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
+import kotlinx.serialization.json.*
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
+import redis.clients.jedis.UnifiedJedis
 import java.math.BigDecimal
 import java.nio.file.NoSuchFileException
 import java.time.Instant
@@ -22,6 +23,7 @@ import kotlin.io.path.writeText
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.microseconds
 import kotlin.time.Duration.Companion.milliseconds
+import redis.clients.jedis.json.Path2 as JsonPath
 
 object Results {
     private val logger = AocLogger.new { }
@@ -29,9 +31,33 @@ object Results {
     private val startTime = System.currentTimeMillis()
     private val runDataChannel = Channel<RunData>(Channel.UNLIMITED)
 
+    private const val REDIS_KEY = "aoc-results"
+    private enum class StorageLocation {
+        FILE,
+        REDIS
+    }
+
+    private val storageLocation by lazy {
+        if (System.getenv("REDIS_URL") != null) {
+            StorageLocation.REDIS
+        } else {
+            StorageLocation.FILE
+        }
+    }
+
+    private val redisClient by lazy {
+        try {
+            val redisUrl = System.getenv("REDIS_URL")?: return@lazy null
+            UnifiedJedis(redisUrl)
+        } catch(e: Exception) {
+            logger.error(e) { "Failed to connect to redis" }
+            null
+        }
+    }
+
     @Serializable
     data class Result(
-        val year: Int = 2024,
+        val year: Int,
         val day: Int,
         val part: Int,
         val benchmarkMicros: Long? = null,
@@ -40,26 +66,98 @@ object Results {
         val cookie: String? = null,
         val timestamp: Long,
         val verified: Boolean = false,
-    )
+    ) {
+        companion object {
+            fun from(json: JSONObject): Result = Result(
+                year = json.getInt("year"),
+                day = json.getInt("day"),
+                part = json.getInt("part"),
+                benchmarkMicros = json.getOrNull("benchmarkMicros"),
+                benchmarkIterations = json.getOrNull("benchmarkIterations"),
+                result = json.getOrNull("result"),
+                cookie = json.getOrNull("cookie"),
+                timestamp = json.getLong("timestamp"),
+                verified = json.getOrNull("verified") ?: false
+            )
+
+            fun from(map: Map<*, *>): Result = Result(
+                year = map["year"] as Int,
+                day = map["day"] as Int,
+                part = map["part"] as Int,
+                benchmarkMicros = (map["benchmarkMicros"] as Int?)?.toLong(),
+                benchmarkIterations = (map["benchmarkIterations"] as Int?)?.toLong(),
+                result = map["result"] as String?,
+                cookie = map["cookie"] as String?,
+                timestamp = map["timestamp"] as Long,
+                verified = (map["verified"] ?: false) as Boolean
+            )
+        }
+
+        fun toJsonObject(): JSONObject = JSONObject().apply {
+            put("year", year)
+            put("day", day)
+            put("part", part)
+            put("benchmarkMicros", benchmarkMicros)
+            put("benchmarkIterations", benchmarkIterations)
+            put("result", result)
+            put("cookie", cookie)
+            put("timestamp", timestamp)
+            put("verified", verified)
+        }
+    }
+
+    private inline fun <reified T> JSONObject.getOrNull(key: String): T? = try {
+        when (T::class) {
+            String::class -> getString(key) as T
+            Int::class -> getInt(key) as T
+            Long::class -> getLong(key) as T
+            Boolean::class -> getBoolean(key) as T
+            else -> throw Exception("unsupported type: ${T::class}")
+        }
+    } catch (e: JSONException) {
+        null
+    }
+
+    private fun getWithFilter(filter: String): List<Result> {
+        return when (storageLocation) {
+            StorageLocation.FILE -> throw NotImplementedError("filtering results from file is not implemented")
+            StorageLocation.REDIS -> redisClient!!.jsonGet(REDIS_KEY, JsonPath("$[?($filter)]")).let { outer ->
+                if (outer !is JSONArray) throw Exception("unexpected result: $outer")
+                outer.toList().filterIsInstance<Map<*,*>>().map { Result.from(it) }
+            }
+        }
+    }
+
+    private fun getAll(): List<Result> {
+        return when (storageLocation) {
+            StorageLocation.FILE -> path.readText().let { json ->
+                Json.decodeFromString<List<Result>>(json)
+            }
+            StorageLocation.REDIS -> redisClient!!.jsonGet(REDIS_KEY, JsonPath("$.*")).let { outer ->
+                if (outer !is JSONArray) throw Exception("unexpected result: $outer")
+                outer.toList().filterIsInstance<Map<*,*>>().map { Result.from(it) }
+            }
+        }
+    }
 
     fun Result.identity() = PuzzleIdentity(year, day, part)
     fun Result.toInstant() = Instant.ofEpochMilli(timestamp)!!
     private fun get(year: Int? = null): List<Result> {
         return try {
-            path.readText().let { json ->
-                Json.decodeFromString<List<Result>>(json)
+            when (storageLocation) {
+                StorageLocation.FILE -> path.readText().let { json ->
+                    Json.decodeFromString<List<Result>>(json)
+                }
+                StorageLocation.REDIS -> when(year) {
+                    null -> getAll()
+                    else -> getWithFilter("@.year == $year")
+                }
             }
         } catch (e: NoSuchFileException) {
             emptyList()
         } catch (e: Exception) {
-            logger.error(e, year) { "Failed to read results" }
+            logger.error(e, year) { "failed to read results" }
             emptyList()
-        }.let {
-            if (year != null) {
-                it.filter { result -> result.year == year }
-            } else {
-                it
-            }
         }
     }
 
@@ -73,11 +171,17 @@ object Results {
 
     private val json = Json { prettyPrint = true }
     fun save(result: Result) {
-        val current = get()
-
-        path.writeText(json.encodeToString((current.filter {
-            it.year != result.year || it.day != result.day || it.part != result.part || it.timestamp != result.timestamp || it.cookie != result.cookie
-        } + result).sortedWith(compareBy({ it.timestamp }, { it.day }, { it.part }))))
+        when (storageLocation) {
+            StorageLocation.FILE -> {
+                val current = get()
+                path.writeText(json.encodeToString((current.filter {
+                    it.year != result.year || it.day != result.day || it.part != result.part || it.timestamp != result.timestamp || it.cookie != result.cookie
+                } + result).sortedWith(compareBy({ it.timestamp }, { it.day }, { it.part }))))
+            }
+            StorageLocation.REDIS -> {
+                redisClient!!.jsonArrAppend(REDIS_KEY, JsonPath.ROOT_PATH, result.toJsonObject())
+            }
+        }
     }
 
     /**
@@ -184,47 +288,53 @@ object Results {
 
     fun verifyLast() {
         val results = get()
-        val last =
-            results.filter { it.result != null && !results.any { otherResult -> otherResult.verified && otherResult.cookie == it.cookie && otherResult.day == it.day && otherResult.part == it.part && otherResult.year == it.year } }
-                .maxByOrNull { it.timestamp }
-                ?: return logger.log(AocLogger.Main) { "no results to verify" }
-        val timestamp = Instant.ofEpochMilli(last.timestamp)
-        val identity = last.identity()
-        logger.log(
-            identity
-        ) { "verifying last result ${resultTheme(last.result!!)} from ${(System.currentTimeMillis() - timestamp.toEpochMilli()).milliseconds} ago" }
-        val good = Terminal().prompt(
-            AocLogger.formatLineAsLog(last.year, last.day, last.part, "is this correct?"),
-            choices = listOf("yes", "no", "y", "n"),
-            invalidChoiceMessage = AocLogger.formatLineAsLog(last.year, last.day, last.part, "invalid choice")
-        ) {
-            when (it) {
-                "yes", "y" -> {
-                    ConversionResult.Valid("yes")
-                }
+        data class ResultIdentity(val puzzle: PuzzleIdentity, val cookie: String)
+        val verifiedResults = results.filter { it.verified && it.cookie != null }.associateBy { ResultIdentity(it.identity(), it.cookie!!) }
+        val unverifiedResults = results.filter { !it.verified && it.cookie != null && !verifiedResults.containsKey(ResultIdentity(it.identity(), it.cookie!!)) }.groupBy { ResultIdentity(it.identity(), it.cookie!!) }
 
-                "no", "n" -> {
-                    ConversionResult.Valid("no")
-                }
+        val bestUnverifiedResults = unverifiedResults.mapValues { (_, v) -> v.maxByOrNull { it.timestamp }!! }
 
-                else -> ConversionResult.Invalid("invalid choice")
-            }
-        }.let {
-            when (it) {
-                "yes" -> true
-                "no" -> false
-                else -> false
-            }
+        if (bestUnverifiedResults.isNotEmpty()) {
+            logger.log(AocLogger.Main) { "attempting to verify ${bestUnverifiedResults.size} unverified results" }
         }
-        if (good) {
-            save(
-                last.copy(
-                    verified = true
+
+        bestUnverifiedResults.entries.forEach { (identity, last) ->
+            logger.log(
+                identity.puzzle
+            ) { "verifying last result ${resultTheme(last.result!!)} from ${(System.currentTimeMillis() - last.timestamp).milliseconds} ago" }
+            val good = Terminal().prompt(
+                AocLogger.formatLineAsLog(last.year, last.day, last.part, "is this correct?"),
+                choices = listOf("yes", "no", "y", "n"),
+                invalidChoiceMessage = AocLogger.formatLineAsLog(last.year, last.day, last.part, "invalid choice")
+            ) {
+                when (it) {
+                    "yes", "y" -> {
+                        ConversionResult.Valid("yes")
+                    }
+
+                    "no", "n" -> {
+                        ConversionResult.Valid("no")
+                    }
+
+                    else -> ConversionResult.Invalid("invalid choice")
+                }
+            }.let {
+                when (it) {
+                    "yes" -> true
+                    "no" -> false
+                    else -> false
+                }
+            }
+            if (good) {
+                save(
+                    last.copy(
+                        verified = true
+                    )
                 )
-            )
-            logger.log(identity) { "verified last result ${resultTheme(last.result!!)}" }
-        } else {
-            logger.log(identity) { "not verified" }
+                logger.log(identity.puzzle) { "verified result" }
+            } else {
+                logger.log(identity.puzzle) { "not verified" }
+            }
         }
     }
 
