@@ -3,6 +3,7 @@ package dev.mtib.aoc.aoc23.days
 import dev.mtib.aoc.aoc23.days.Day16.Cell.TileType
 import dev.mtib.aoc.aoc23.days.Day16.Cell.TileType.Companion.toTileType
 import dev.mtib.aoc.aoc23.util.AbstractDay
+import dev.mtib.aoc.util.AocLogger.Companion.logger
 
 object Day16 : AbstractDay(16) {
 

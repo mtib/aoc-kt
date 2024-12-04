@@ -36,6 +36,7 @@ private val cleanupScope = CoroutineScope(Dispatchers.IO)
 
 const val BENCHMARK_WINDOW = 100
 const val BENCHMARK_TIMEOUT_SECONDS = 5
+const val BENCHMARK_TIMEOUT_OVERRIDE_ENV = "BENCHMARK_TIMEOUT_SECONDS"
 suspend fun main(args: Array<String>) {
     logger.log(AocLogger.Main) { "starting advent of code" }
     AocDay.load()
@@ -195,6 +196,8 @@ private suspend fun runResults(
         logger.error(e = null, puzzle) { "not released yet, releasing in ${e.waitDuration}" }
     } catch (e: IncorrectResultException) {
         logger.error(puzzle = puzzle) { "got ${styleResult(e.result)} but earlier hint makes this result impossible (${e.knownConflict})" }
+    } catch (e: AocDay.CiSkipException) {
+        logger.error(e = null, puzzle) { "skipped in CI" }
     } finally {
         teardown()
     }
@@ -206,7 +209,7 @@ private suspend fun benchmark(
     val (puzzle, block, teardown, getHint) = context
     try {
         val durations = mutableListOf<Duration>()
-        val timeout = BENCHMARK_TIMEOUT_SECONDS.seconds
+        val timeout = System.getenv(BENCHMARK_TIMEOUT_OVERRIDE_ENV)?.let { it.toInt().seconds } ?: BENCHMARK_TIMEOUT_SECONDS.seconds
         val startTime = System.currentTimeMillis()
         val benchmarkDuration = measureTime {
             while (System.currentTimeMillis() - startTime < timeout.inWholeMilliseconds && (durations.size < BENCHMARK_WINDOW * 20 || System.currentTimeMillis() - startTime < 1.seconds.inWholeMilliseconds)) {
@@ -238,5 +241,7 @@ private suspend fun benchmark(
         logger.error(e = null, puzzle) { "not implemented" }
     } catch (e: AocDay.DayNotReleasedException) {
         logger.error(e = null, puzzle) { "not released yet, releasing in ${e.waitDuration}" }
+    } catch (e: AocDay.CiSkipException) {
+        logger.error(e = null, puzzle) { "skipped in CI" }
     }
 }

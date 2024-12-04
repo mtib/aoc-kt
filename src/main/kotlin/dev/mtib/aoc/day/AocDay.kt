@@ -9,6 +9,7 @@ import arrow.core.right
 import arrow.core.some
 import arrow.core.toOption
 import dev.mtib.aoc.util.AocLogger
+import dev.mtib.aoc.util.AocLogger.Companion.logger
 import dev.mtib.aoc.util.Day
 import dev.mtib.aoc.util.Year
 import dev.mtib.aoc.util.styleResult
@@ -37,8 +38,9 @@ open class AocDay(
         solutions.add(this)
     }
 
+    class CiSkipException : Exception("This test is not supported in CI")
+
     companion object {
-        private val logger by lazy { AocLogger.new {} }
         private val solutions = mutableListOf<AocDay>()
         fun years(): Set<Year> = solutions.map { it.identity.toYear() }.toSet()
         fun get(day: Day): Option<AocDay> = solutions.find { it.identity == day }.toOption()
@@ -46,6 +48,11 @@ open class AocDay(
         fun getAll(year: Year): List<AocDay> = solutions.filter { it.identity.toYear() == year }
         fun getByClass(clazz: Class<*>): Option<AocDay> =
             solutions.find { it::class.java == clazz }.toOption()
+        fun skipCi() {
+            if (System.getenv("CI") != null) {
+                throw CiSkipException()
+            }
+        }
 
         fun getReleaseTime(day: Day): ZonedDateTime {
             return ZonedDateTime.of(day.year, 12, day.day, 0, 0, 0, 0, ZoneId.of("UTC-5"))

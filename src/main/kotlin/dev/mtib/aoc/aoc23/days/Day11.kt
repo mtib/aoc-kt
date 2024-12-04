@@ -2,10 +2,10 @@ package dev.mtib.aoc.aoc23.days
 
 import dev.mtib.aoc.aoc23.util.AbstractDay
 import dev.mtib.aoc.util.AocLogger
+import dev.mtib.aoc.util.AocLogger.Companion.logger
 import kotlin.math.abs
 
 object Day11 : AbstractDay(11) {
-    private val logger = AocLogger.new { }
     private fun expand(input: Array<String>): List<String> {
         val horizontalExpansionColumns =
             (0..<input[0].length).associateWith { column -> input.all { it[column] != '#' } }

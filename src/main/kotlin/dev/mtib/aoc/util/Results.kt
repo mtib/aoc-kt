@@ -129,7 +129,7 @@ object Results {
                         outer.toList().filterIsInstance<Map<*,*>>().map { Result.from(it) }
                     }
                 } catch (e: JedisConnectionException) {
-                    logger.error() { "failed to read results: redis connection ($filter)" }
+                    logger.error() { "failed to read results: ${e.message} ($filter)" }
                     emptyList()
                 }
             }
@@ -148,7 +148,7 @@ object Results {
                         outer.toList().filterIsInstance<Map<*, *>>().map { Result.from(it) }
                     }
                 } catch (e: JedisConnectionException) {
-                    logger.error() { "failed to read results: redis connection" }
+                    logger.error() { "failed to read results: ${e.message}" }
                     emptyList()
                 }
             }
@@ -283,7 +283,15 @@ object Results {
     }
 
     private fun findVerifiedOrNull(year: Int, day: Int, part: Int): Result? {
-        return get(year).find { it.day == day && it.part == part && it.verified }
+        return when (storageLocation) {
+            StorageLocation.FILE -> {
+                return get(year).find { it.day == day && it.part == part && it.verified }
+            }
+
+            StorageLocation.REDIS -> {
+                return getWithFilter("@.year == $year && @.day == $day && @.part == $part && @.verified == true").firstOrNull()
+            }
+        }
     }
 
     suspend fun send(result: RunData) {

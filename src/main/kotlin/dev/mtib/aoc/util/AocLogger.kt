@@ -6,15 +6,17 @@ import com.github.ajalt.mordant.terminal.Terminal
 import dev.mtib.aoc.day.AocDay
 
 class AocLogger private constructor(
-    private val name: String,
+    private val aocDay: AocDay? = null
 ) {
-    private val aocDay: AocDay? = try {
-        Class.forName(name)
-    } catch (e: ClassNotFoundException) {
-        null
-    }?.let { clazz ->
-        AocDay.getByClass(clazz).getOrNull()
-    }
+    private constructor(className: String) : this(
+        aocDay = try {
+            Class.forName(className)
+        } catch (e: ClassNotFoundException) {
+            null
+        }?.let { clazz ->
+            AocDay.getByClass(clazz).getOrNull()
+        }
+    )
 
     object Main
 
@@ -103,7 +105,7 @@ class AocLogger private constructor(
         private val terminal = Terminal()
         fun new(block: AocLogger.() -> Unit): AocLogger {
             return AocLogger(
-                name = block.javaClass.name.let { name ->
+                className = block.javaClass.name.let { name ->
                     when {
                         name.contains("Kt$") -> name.substringBefore("Kt$")
                         name.contains("$") -> name.substringBefore("$")
@@ -112,6 +114,9 @@ class AocLogger private constructor(
                 }
             ).apply { block() }
         }
+
+        val AocDay.logger
+            get() = AocLogger(this)
 
         private fun getStyledPrefix(year: Int?, day: Int?, part: Int?): String {
             return when {
