@@ -11,3 +11,14 @@ suspend fun <T, R> Iterable<T>.chunkedParMap(chunkSize: Int, block: suspend (Lis
         }
     }.awaitAll()
 }
+
+/**
+ * This is stateless and terminal.
+ */
+suspend fun <T, R> Sequence<T>.chunkedParMap(chunkSize: Int, block: suspend (List<T>) -> R): List<R> = coroutineScope {
+    chunked(chunkSize).map { chunk ->
+        async {
+            block(chunk)
+        }
+    }.toList().awaitAll()
+}

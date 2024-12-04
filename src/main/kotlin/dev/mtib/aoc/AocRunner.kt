@@ -126,8 +126,8 @@ suspend fun runDay(day: Day) {
         aocDay.benchmarking = func == ::benchmark
         logger.log(day) { message }
         mapOf(
-            1 to PuzzleExecutor::part1,
             2 to PuzzleExecutor::part2,
+            1 to PuzzleExecutor::part1,
         ).forEach { (part, block) ->
             aocDay.partMode = part
             val puzzle = day.PuzzleIdentity(part)

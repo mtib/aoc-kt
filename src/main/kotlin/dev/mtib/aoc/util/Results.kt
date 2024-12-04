@@ -13,6 +13,7 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import redis.clients.jedis.UnifiedJedis
+import redis.clients.jedis.exceptions.JedisConnectionException
 import java.math.BigDecimal
 import java.nio.file.NoSuchFileException
 import java.time.Instant
@@ -121,9 +122,16 @@ object Results {
     private fun getWithFilter(filter: String): List<Result> {
         return when (storageLocation) {
             StorageLocation.FILE -> throw NotImplementedError("filtering results from file is not implemented")
-            StorageLocation.REDIS -> redisClient!!.jsonGet(REDIS_KEY, JsonPath("$[?($filter)]")).let { outer ->
-                if (outer !is JSONArray) throw Exception("unexpected result: $outer")
-                outer.toList().filterIsInstance<Map<*,*>>().map { Result.from(it) }
+            StorageLocation.REDIS -> {
+                try {
+                    redisClient!!.jsonGet(REDIS_KEY, JsonPath("$[?($filter)]")).let { outer ->
+                        if (outer !is JSONArray) throw Exception("unexpected result: $outer")
+                        outer.toList().filterIsInstance<Map<*,*>>().map { Result.from(it) }
+                    }
+                } catch (e: JedisConnectionException) {
+                    logger.error() { "failed to read results: redis connection ($filter)" }
+                    emptyList()
+                }
             }
         }
     }
@@ -133,9 +141,16 @@ object Results {
             StorageLocation.FILE -> path.readText().let { json ->
                 Json.decodeFromString<List<Result>>(json)
             }
-            StorageLocation.REDIS -> redisClient!!.jsonGet(REDIS_KEY, JsonPath("$.*")).let { outer ->
-                if (outer !is JSONArray) throw Exception("unexpected result: $outer")
-                outer.toList().filterIsInstance<Map<*,*>>().map { Result.from(it) }
+            StorageLocation.REDIS -> {
+                try {
+                    redisClient!!.jsonGet(REDIS_KEY, JsonPath("$.*")).let { outer ->
+                        if (outer !is JSONArray) throw Exception("unexpected result: $outer")
+                        outer.toList().filterIsInstance<Map<*, *>>().map { Result.from(it) }
+                    }
+                } catch (e: JedisConnectionException) {
+                    logger.error() { "failed to read results: redis connection" }
+                    emptyList()
+                }
             }
         }
     }
@@ -166,7 +181,15 @@ object Results {
     }
 
     private fun getProgress(year: Int, day: Int, part: Int): Iterable<Result> {
-        return get(year).filter { it.day == day && it.part == part }
+        return when (storageLocation) {
+            StorageLocation.FILE -> {
+                get(year).filter { it.day == day && it.part == part }
+            }
+
+            StorageLocation.REDIS -> {
+                getWithFilter("@.year == $year && @.day == $day && @.part == $part")
+            }
+        }
     }
 
     private val json = Json { prettyPrint = true }
@@ -179,7 +202,11 @@ object Results {
                 } + result).sortedWith(compareBy({ it.timestamp }, { it.day }, { it.part }))))
             }
             StorageLocation.REDIS -> {
-                redisClient!!.jsonArrAppend(REDIS_KEY, JsonPath.ROOT_PATH, result.toJsonObject())
+                try {
+                    redisClient!!.jsonArrAppend(REDIS_KEY, JsonPath.ROOT_PATH, result.toJsonObject())
+                } catch (e: JedisConnectionException) {
+                    logger.error() { "failed to save result: ${e.message}" }
+                }
             }
         }
     }
@@ -188,6 +215,7 @@ object Results {
      * Saves version of the results that doesn't contain any sensitive information.
      */
     fun saveCleaned() {
+        val data = get()
         buildJsonObject {
             put("timestamp_epoch_millis", startTime)
             put(
@@ -203,9 +231,9 @@ object Results {
             put("arch", System.getProperty("RUNNER_ARCH"))
             put("os", System.getProperty("RUNNER_OS"))
 
-            put("results", get().size)
+            put("results", data.size)
             put("years", buildJsonObject {
-                get().groupBy { it.year }.mapValues { (year, days) ->
+                data.groupBy { it.year }.mapValues { (year, days) ->
                     put(year.toString(), buildJsonObject {
                         put("days", buildJsonObject {
                             days.groupBy { it.day }.mapValues { (_, parts) ->
