@@ -66,10 +66,6 @@ object Day5: AocDay(2024, 5) {
                 return Parsed(manualChannel, rules)
             }
         }
-        data class Manuals(
-            val valid: Set<List<Short>>,
-            val invalid: Set<List<Short>>
-        )
     }
 
     override suspend fun part1(): Any = coroutineScope {
