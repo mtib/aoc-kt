@@ -1,33 +1,36 @@
 package dev.mtib.aoc.aoc24.days
 
 import dev.mtib.aoc.day.AocDay
-import dev.mtib.aoc.util.AocLogger.Companion.logger
 import dev.mtib.aoc.util.chunkedParMap
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.launch
 
 object Day5: AocDay(2024, 5) {
     private data class Parsed(
-        val manuals: Manuals,
-        val rules: Map<Int, Set<Int>>
+        val manuals: ReceiveChannel<List<Short>>,
+        val rules: Map<Short, Set<Short>>
     ) {
+        enum class Validity {
+            VALID, INVALID
+        }
         companion object {
-            suspend fun get() : Parsed = coroutineScope {
+            suspend fun get(only: Validity = Validity.VALID, parentScope: CoroutineScope) : Parsed {
                 val emptyLine = inputLinesList.indexOfFirst { it == "" }
 
-                val rules: MutableMap<Int, MutableSet<Int>> = mutableMapOf()
+                val rules: MutableMap<Short, MutableSet<Short>> = mutableMapOf()
                 coroutineScope {
-                    val ruleLines = inputLinesList.slice(0 until emptyLine)
-                    val ruleChannel = Channel<Pair<Int, Int>>(ruleLines.size)
+                    val ruleLines = inputLinesList.subList(0, emptyLine)
+                    val ruleChannel = Channel<Pair<Short, Short>>(ruleLines.size)
                     launch {
                         ruleLines.chunkedParMap(ruleLines.size / cpu) { lines ->
                             for (line in lines) {
-                                val rule = line.split("|")
-                                val pred = rule[0].trim().toInt()
-                                val succ = rule[1].trim().toInt()
-
-                                ruleChannel.send(pred to succ)
+                                val (pred, succ) = line.split("|", limit=2)
+                                ruleChannel.send(pred.toShort() to succ.toShort())
                             }
                         }
                         ruleChannel.close()
@@ -39,67 +42,55 @@ object Day5: AocDay(2024, 5) {
                     }
                 }
 
-                val manuals = object {
-                    val valid = mutableSetOf<List<Int>>()
-                    val invalid = mutableSetOf<List<Int>>()
-                }
-                coroutineScope {
-                    val manualLines = inputLinesList.slice(emptyLine + 1 until inputLinesList.size)
-                    val manualChannel = Channel<Pair<Boolean, List<Int>>>(manualLines.size)
-                    launch {
-                        manualLines.chunkedParMap(manualLines.size / cpu) { lines ->
-                            lines@for (line in lines) {
-                                val pages = line.split(",").map { it.toInt() }
-                                for (i in pages.indices) {
-                                    val notAllowed = rules[pages[i]] ?: emptySet()
-                                    if (notAllowed.intersect(pages.slice(0 until i).toSet()).isNotEmpty() ) {
-                                        manualChannel.send(false to pages)
-                                        continue@lines
-                                    }
+                val manualChannel = Channel<List<Short>>(100)
+                parentScope.launch {
+                    val manualLines = inputLinesList.subList(emptyLine + 1, inputLinesList.size)
+                    manualLines.chunkedParMap(manualLines.size / cpu) { lines ->
+                        lines@for (line in lines) {
+                            val pages = line.split(",").map { it.toShort() }
+                            for (i in pages.indices) {
+                                val notAllowed = rules[pages[i]] ?: emptySet()
+                                if (pages.subList(0, i).any { it in notAllowed }) {
+                                    if (only == Validity.VALID) continue@lines
+                                    manualChannel.send(pages)
+                                    continue@lines
                                 }
-                                manualChannel.send(true to pages)
                             }
-                        }
-                        manualChannel.close()
-                    }
-
-                    launch {
-                        for ((isValid, manual) in manualChannel) {
-                            when(isValid) {
-                                true -> manuals.valid
-                                false -> manuals.invalid
-                            }.add(manual)
+                            if (only == Validity.INVALID) continue@lines
+                            manualChannel.send(pages)
                         }
                     }
+                    manualChannel.close()
                 }
 
-                Parsed(Manuals(manuals.valid, manuals.invalid), rules)
+                return Parsed(manualChannel, rules)
             }
         }
         data class Manuals(
-            val valid: Set<List<Int>>,
-            val invalid: Set<List<Int>>
+            val valid: Set<List<Short>>,
+            val invalid: Set<List<Short>>
         )
     }
 
-    override suspend fun part1(): Any {
-        val parsed = Parsed.get()
+    override suspend fun part1(): Any = coroutineScope {
+        val parsed = Parsed.get(only = Parsed.Validity.VALID, parentScope = this)
 
-        return parsed.manuals.valid.sumOf { it[it.size / 2] }
+        parsed.manuals.consumeAsFlow().fold(0) { acc, it -> acc + it[it.size / 2].toInt() }
     }
 
-    override suspend fun part2(): Any {
-        val parsed = Parsed.get()
+    override suspend fun part2(): Any = coroutineScope {
+        val parsed = Parsed.get(only = Parsed.Validity.INVALID, parentScope = this)
 
-        val comparator = java.util.Comparator<Int> { o1, o2 ->
+        val comparator = java.util.Comparator<Short> { o1, o2 ->
             when {
                 parsed.rules[o1]?.contains(o2) == true -> -1
                 parsed.rules[o2]?.contains(o1) == true -> 1
                 else -> 0
             }
         }
-        return parsed.manuals.invalid.sumOf {
-            it.sortedWith(comparator)[it.size / 2]
+
+        parsed.manuals.consumeAsFlow().fold(0) { acc, it ->
+            acc + it.sortedWith(comparator)[it.size / 2].toInt()
         }
     }
 }
