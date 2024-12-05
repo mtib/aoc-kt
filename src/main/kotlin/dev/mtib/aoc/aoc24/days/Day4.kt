@@ -88,14 +88,14 @@ object Day4 : AocDay(2024, 4) {
 
     override suspend fun part1(): Any {
         val xRange = 0 until inputLinesList[0].length
-        return inputLinesList.indices.chunkedParMap(inputLinesList.size / Runtime.getRuntime().availableProcessors()) { chunk -> chunk.sumOf { y -> xRange.sumOf { x -> checkXMAS(x, y)} } }.sum()
+        return inputLinesList.indices.chunkedParMap(inputLinesList.size / cpu) { chunk -> chunk.sumOf { y -> xRange.sumOf { x -> checkXMAS(x, y)} } }.sum()
     }
 
     override suspend fun part2(): Any = coroutineScope {
         logger.log { "Solving part 2" }
         val xRange = (1 until inputLinesList[0].length -1)
         (1 until inputLinesList.size - 1)
-            .chunkedParMap(inputLinesList.size / Runtime.getRuntime().availableProcessors()) { yRange -> yRange.sumOf { y -> xRange.count { x-> checkMAS(x, y) }  } }
+            .chunkedParMap(inputLinesList.size / cpu) { yRange -> yRange.sumOf { y -> xRange.count { x-> checkMAS(x, y) }  } }
             .sum()
     }
 }

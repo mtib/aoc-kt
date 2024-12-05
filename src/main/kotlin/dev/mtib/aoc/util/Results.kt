@@ -12,6 +12,7 @@ import kotlinx.serialization.json.*
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import redis.clients.jedis.JedisPooled
 import redis.clients.jedis.UnifiedJedis
 import redis.clients.jedis.exceptions.JedisConnectionException
 import java.math.BigDecimal
@@ -49,7 +50,7 @@ object Results {
     private val redisClient by lazy {
         try {
             val redisUrl = System.getenv("REDIS_URL")?: return@lazy null
-            UnifiedJedis(redisUrl)
+            JedisPooled(redisUrl)
         } catch(e: Exception) {
             logger.error(e) { "Failed to connect to redis" }
             null

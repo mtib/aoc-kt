@@ -39,6 +39,7 @@ open class AocDay(
     }
 
     class CiSkipException : Exception("This test is not supported in CI")
+    val cpu = Runtime.getRuntime().availableProcessors()
 
     companion object {
         private val solutions = mutableListOf<AocDay>()
