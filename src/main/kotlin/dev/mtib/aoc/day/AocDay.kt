@@ -15,6 +15,8 @@ import dev.mtib.aoc.util.Year
 import dev.mtib.aoc.util.styleResult
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.reflections.Reflections
@@ -176,6 +178,76 @@ open class AocDay(
     ) {
         val releaseTime = getReleaseTime(day)
         val waitDuration = (releaseTime.toInstant().toEpochMilli() - System.currentTimeMillis()).milliseconds
+    }
+
+    fun createTestFile() {
+        if (year < 2024) {
+            return
+        }
+        if (releaseTime.isAfter(ZonedDateTime.now())) {
+            return
+        }
+        val token = System.getenv("SESSION")
+        if (token.isNullOrBlank()) {
+            return
+        }
+        val outPath = Path("src/test/kotlin/dev/mtib/aoc/aoc${year%100}/days/Day${day}Test.kt")
+        if (outPath.exists()) {
+            return
+        }
+        val request = Request.Builder()
+            .url("https://adventofcode.com/$year/day/$day")
+            .get()
+            .addHeader("Cookie", "session=$token")
+            .build()
+        val client = OkHttpClient()
+        val response = client.newCall(request).execute()
+        val body = response.body!!.string()
+        val codeRegex = Regex("""<pre><code>(.*?)</code></pre>""", RegexOption.DOT_MATCHES_ALL)
+        val codeSnippets = codeRegex.findAll(body)
+            .map { it.groupValues[1].replace("&lt;", "<").replace("&gt;", ">") }
+            .filterNot { it.contains("<em>") }
+            .distinct()
+
+        logger.log(identity) { "creating ${outPath.fileName} with code snippets" }
+
+        outPath.writeText(buildString {
+            appendLine("""
+                package dev.mtib.aoc.aoc24.days
+
+                import io.kotest.core.spec.style.FunSpec
+                
+                class Day${day}Test : FunSpec({
+            """.trimIndent())
+            codeSnippets.forEachIndexed { index, code ->
+                appendLine(
+                "    val snippet${index} = \"\"\"\n${
+                    code.trimEnd().lines().joinToString("\n") { " ".repeat(8) + it }
+                }\n    \"\"\".trimIndent()"
+                )
+            }
+            appendLine("""
+                    context("part1") {
+                        test("doesn't throw") {
+                            try {
+                                Day${day}.part1()
+                            } catch (e: NotImplementedError) {
+                                // Ignore allowed exception
+                            }
+                        }
+                    }
+                    context("part2") {
+                        test("doesn't throw") {
+                            try {
+                                Day${day}.part2()
+                            } catch (e: NotImplementedError) {
+                                // Ignore allowed exception
+                            }
+                        }
+                    }
+                })
+            """.trimIndent())
+        })
     }
 
     suspend fun <T> withInput(input: String, block: suspend AocDay.() -> T): T {

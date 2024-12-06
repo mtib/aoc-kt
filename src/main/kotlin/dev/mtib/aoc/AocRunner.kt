@@ -120,6 +120,14 @@ suspend fun runDay(day: Day) {
         return
     }
 
+    if (System.getenv("CI").isNullOrBlank()) {
+        try {
+            aocDay.createTestFile()
+        } catch (e: Exception) {
+            logger.error(e = e, year = day.year, day = day.toInt()) { "failed to create test file" }
+        }
+    }
+
     mapOf(
         ::runResults to "solving puzzles",
         ::benchmark to "running benchmarks",
