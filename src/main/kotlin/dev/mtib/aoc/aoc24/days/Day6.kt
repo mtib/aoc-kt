@@ -11,11 +11,21 @@ object Day6: AocDay(2024, 6) {
     }
 
     private data class Solution(
-        val visited: Set<Pair<Int, Int>>,
-        val startPosition: Triple<Int, Int, Direction>
+        val visited: Set<Triple<Int, Int, Direction>>,
+        val visitedInOrder: List<Triple<Int, Int, Direction>>,
+        val startPosition: Triple<Int, Int, Direction>,
     )
 
-    private fun runPart1(lines: Array<CharArray>, startPosition: Triple<Int, Int, Direction>? = null, shadow: Pair<Int, Int>? = null): Solution {
+    private fun Triple<Int, Int, Direction>.backward(): Triple<Int, Int, Direction> {
+        return when (third) {
+            N -> Triple(first, second + 1, third)
+            E -> Triple(first - 1, second, third)
+            S -> Triple(first, second - 1, third)
+            W -> Triple(first + 1, second, third)
+        }
+    }
+
+    private fun runPart1(lines: Array<CharArray>, startPosition: Triple<Int, Int, Direction>? = null, shadow: Pair<Int, Int>? = null, skipPart2Work: Boolean = false): Solution {
         val x = lines[0].size
         val y = lines.size
 
@@ -40,15 +50,25 @@ object Day6: AocDay(2024, 6) {
         var (posX, posY, dir) = startPosition
 
         val visited = mutableSetOf<Triple<Int, Int, Direction>>()
+        val visitedInOrder = mutableListOf<Triple<Int, Int, Direction>>()
 
         var nextX: Int
         var nextY: Int
         outer@while (true) {
-            val current = Triple(posX, posY, dir)
-            if (current in visited) {
-                throw IllegalStateException("Loop detected")
+
+            when (skipPart2Work) {
+                true -> {
+                    visited.add(Triple(posX, posY, startPosition.third))
+                }
+                false -> {
+                    val current = Triple(posX, posY, dir)
+                    if (current in visited) {
+                        throw IllegalStateException("Loop detected")
+                    }
+                    visited.add(current)
+                    visitedInOrder.add(current)
+                }
             }
-            visited.add(current)
 
             var bad = false
             do {
@@ -76,15 +96,22 @@ object Day6: AocDay(2024, 6) {
             posX = nextX
             posY = nextY
         }
-        return Solution(visited.map { it.first to it.second }.toSet(), startPosition)
+        return Solution(visited, visitedInOrder, startPosition)
     }
     override suspend fun part1(): Any {
-        return runPart1(inputLinesArray).visited.size
+        return runPart1(inputLinesArray, skipPart2Work = true).visited.size
     }
 
     override suspend fun part2(): Any {
         val result = runPart1(inputLinesArray)
-        val walkedInto = result.visited - result.startPosition.let { (x, y, _) -> x to y }
+        val walkedInto = result.visitedInOrder.filterNot { it.first == result.startPosition.first && it.second == result.startPosition.second }
+            .fold(mutableListOf<Triple<Int, Int, Direction>>()) { acc, (x, y, d) ->
+                if (acc.any { it.first == x && it.second == y }) acc else acc.apply {
+                    add(
+                        Triple(x, y, d)
+                    )
+                }
+            }
 
         val count = walkedInto.chunkedParMap(walkedInto.size / cpu) { walkedIntoChunk ->
             walkedIntoChunk.count { stepped ->
@@ -94,7 +121,7 @@ object Day6: AocDay(2024, 6) {
                 }
 
                 try {
-                    runPart1(inputLinesArray, startPosition = result.startPosition, shadow = stepped)
+                    runPart1(inputLinesArray, startPosition = stepped.backward(), shadow = stepped.first to stepped.second)
                     false
                 } catch (e: IllegalStateException) {
                     if (e.message == "Loop detected") {
