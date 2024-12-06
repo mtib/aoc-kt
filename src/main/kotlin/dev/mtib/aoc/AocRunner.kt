@@ -212,7 +212,7 @@ private suspend fun benchmark(
         val timeout = System.getenv(BENCHMARK_TIMEOUT_OVERRIDE_ENV)?.let { it.toInt().seconds } ?: BENCHMARK_TIMEOUT_SECONDS.seconds
         val startTime = System.currentTimeMillis()
         val benchmarkDuration = measureTime {
-            while (System.currentTimeMillis() - startTime < timeout.inWholeMilliseconds && (durations.size < BENCHMARK_WINDOW * 20 || System.currentTimeMillis() - startTime < 1.seconds.inWholeMilliseconds)) {
+            while (System.currentTimeMillis() - startTime < timeout.inWholeMilliseconds && (durations.size < BENCHMARK_WINDOW * 100 || System.currentTimeMillis() - startTime < 1.seconds.inWholeMilliseconds)) {
                 measureTime { block() }.also {
                     durations.add(it)
                 }

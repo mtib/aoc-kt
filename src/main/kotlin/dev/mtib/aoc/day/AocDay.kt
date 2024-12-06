@@ -200,8 +200,8 @@ open class AocDay(
     val inputLinesList: List<String>
         get() = input.lines()
 
-    val inputLinesArray: Array<String>
-        get() = inputLinesList.toTypedArray()
+    val inputLinesArray: Array<CharArray>
+        get() = inputLinesList.map{it.toCharArray()}.toTypedArray()
 
     override suspend fun part1(): Any {
         throw NotImplementedError()

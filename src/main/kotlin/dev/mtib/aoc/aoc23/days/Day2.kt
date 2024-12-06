@@ -45,7 +45,7 @@ object Day2 : AocDay(2023, 2) {
     }
 
     override suspend fun part1(): String {
-        val games = inputLinesArray.map { s -> parseLine(s) }
+        val games = inputLinesList.map { s -> parseLine(s) }
 
         val sumOfPossibleGamesIds = games.filter {
             it.turns.all { turn ->
@@ -63,7 +63,7 @@ object Day2 : AocDay(2023, 2) {
     }
 
     override suspend fun part2(): String {
-        val games = inputLinesArray.map { s -> parseLine(s) }
+        val games = inputLinesList.map { s -> parseLine(s) }
 
         val result = games.sumOf {
             var acc: Map<Cube, Int>? = buildMap {

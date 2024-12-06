@@ -5,7 +5,7 @@ import dev.mtib.aoc.day.AocDay
 object Day1 : AocDay(2023, 1) {
 
     override suspend fun part1(): String {
-        return inputLinesArray.filter { it.isNotBlank() }.sumOf {
+        return inputLinesArray.filter { it.concatToString().isNotBlank() }.sumOf {
             it.find { it.isDigit() }!!.digitToInt() * 10 + it.findLast { it.isDigit() }!!.digitToInt()
         }.toString()
     }
@@ -34,9 +34,9 @@ object Day1 : AocDay(2023, 1) {
         }
 
         return inputLinesArray.sumOf {
-            digitToValue(regexp.find(it)!!.groupValues[1]) * 10 + digitToValue(
+            digitToValue(regexp.find(it.concatToString())!!.groupValues[1]) * 10 + digitToValue(
                 reversedRegexp.find(
-                    it.reversed()
+                    it.concatToString().reversed()
                 )!!.groupValues[1].reversed()
             )
         }

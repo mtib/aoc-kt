@@ -4,7 +4,7 @@ import dev.mtib.aoc.day.AocDay
 
 object Day3 : AocDay(2023, 3) {
 
-    private fun isAdjacentToSymbol(input: Array<String>, line: Int, start: Int): Boolean {
+    private fun isAdjacentToSymbol(input: List<String>, line: Int, start: Int): Boolean {
         val length = run {
             var i = 0
             while (i + start < input[line].length && input[line][i + start].isDigit()) {
@@ -16,7 +16,7 @@ object Day3 : AocDay(2023, 3) {
     }
 
     private fun isAdjacentTo(
-        input: Array<String>,
+        input: List<String>,
         line: Int,
         start: Int,
         length: Int,
@@ -40,7 +40,7 @@ object Day3 : AocDay(2023, 3) {
 
     override suspend fun part1(): String {
         val numRegex = Regex("""(\d+)""")
-        val sum = inputLinesArray.flatMapIndexed { lineIndex, line ->
+        val sum = inputLinesList.flatMapIndexed { lineIndex, line ->
             numRegex.findAll(line).map {
                 object {
                     val number = it.groupValues[1].toInt()
@@ -48,7 +48,7 @@ object Day3 : AocDay(2023, 3) {
                     val y = lineIndex
                 }
             }
-        }.filter { isAdjacentToSymbol(inputLinesArray, line = it.y, start = it.x) }.sumOf { it.number }
+        }.filter { isAdjacentToSymbol(inputLinesList, line = it.y, start = it.x) }.sumOf { it.number }
         return sum.toString()
     }
 
@@ -60,7 +60,7 @@ object Day3 : AocDay(2023, 3) {
             val length: Int
         )
 
-        val numbers = inputLinesArray.flatMapIndexed { lineIndex, line ->
+        val numbers = inputLinesList.flatMapIndexed { lineIndex, line ->
             Regex("""(\d+)""").findAll(line).map {
                 NumberMatch(
                     it.groupValues[1].toInt(),
@@ -70,7 +70,7 @@ object Day3 : AocDay(2023, 3) {
                 )
             }
         }
-        val gearSums = inputLinesArray.flatMapIndexed { lineIndex, line ->
+        val gearSums = inputLinesList.flatMapIndexed { lineIndex, line ->
             Regex("""\*""").findAll(line).map {
                 object {
                     val x = it.range.first
@@ -83,7 +83,7 @@ object Day3 : AocDay(2023, 3) {
                 for (xOffset in -1..1) {
                     val x = gear.x + xOffset
                     val y = gear.y + yOffset
-                    if (y < 0 || y >= inputLinesArray.size || x < 0 || x >= inputLinesArray[y].length) {
+                    if (y < 0 || y >= inputLinesArray.size || x < 0 || x >= inputLinesList[y].length) {
                         continue
                     }
                     val number =

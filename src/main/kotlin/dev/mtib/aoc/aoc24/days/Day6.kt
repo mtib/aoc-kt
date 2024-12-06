@@ -9,37 +9,40 @@ object Day6: AocDay(2024, 6) {
     private enum class Direction {
         N, E, S, W
     }
-    private fun runPart1(lines: List<String>): Int {
-        var posX: Int = 0
-        var posY: Int = 0
-        var dir: Direction = N
 
-        val x = lines[0].length
+    private data class Solution(
+        val visited: Set<Pair<Int, Int>>,
+        val startPosition: Triple<Int, Int, Direction>
+    )
+
+    private fun runPart1(lines: Array<CharArray>, startPosition: Triple<Int, Int, Direction>? = null, shadow: Pair<Int, Int>? = null): Solution {
+        val x = lines[0].size
         val y = lines.size
 
-        outer@for ((ly, line) in lines.withIndex()) {
-            for ((lx, char) in line.withIndex()) {
-                when (char) {
-                    '^','v','<','>' -> {
-                        posX = lx
-                        posY = ly
-                        dir = when (char) {
-                            '^' -> N
-                            'v' -> S
-                            '<' -> W
-                            '>' -> E
-                            else -> throw IllegalStateException()
+        val startPosition = startPosition ?: run {
+            for ((ly, line) in lines.withIndex()) {
+                for ((lx, char) in line.withIndex()) {
+                    when (char) {
+                        '^','v','<','>' -> {
+                            return@run Triple(lx, ly, when (char) {
+                                '^' -> N
+                                'v' -> S
+                                '<' -> W
+                                '>' -> E
+                                else -> throw IllegalStateException()
+                            })
                         }
-                        break@outer
                     }
                 }
             }
+            throw IllegalStateException("No starting position found")
         }
+        var (posX, posY, dir) = startPosition
 
         val visited = mutableSetOf<Triple<Int, Int, Direction>>()
 
-        var nextX = 0
-        var nextY = 0
+        var nextX: Int
+        var nextY: Int
         outer@while (true) {
             val current = Triple(posX, posY, dir)
             if (current in visited) {
@@ -47,6 +50,7 @@ object Day6: AocDay(2024, 6) {
             }
             visited.add(current)
 
+            var bad = false
             do {
                 nextX = posX
                 nextY = posY
@@ -56,99 +60,41 @@ object Day6: AocDay(2024, 6) {
                     S -> nextY++
                     W -> nextX--
                 }
-                if (lines.getOrNull(nextY)?.getOrNull(nextX) == '#') {
+                if (nextX !in 0 until x || nextY !in 0 until y) {
+                    break@outer
+                }
+                bad = (shadow?.first == nextX && shadow.second == nextY) || lines[nextY][nextX] == '#'
+                if (bad) {
                     dir = when (dir) {
                         N -> E
                         E -> S
                         S -> W
                         W -> N
                     }
-                } else if (nextX !in 0 until x || nextY !in 0 until y) {
-                    break@outer
                 }
-            } while (lines[nextY][nextX] == '#')
+            } while (bad)
             posX = nextX
             posY = nextY
         }
-        return visited.map { it.first to it.second }.toSet().size
+        return Solution(visited.map { it.first to it.second }.toSet(), startPosition)
     }
     override suspend fun part1(): Any {
-        return runPart1(inputLinesList)
+        return runPart1(inputLinesArray).visited.size
     }
 
     override suspend fun part2(): Any {
-        var posX: Int = 0
-        var posY: Int = 0
-        var dir: Direction = N
+        val result = runPart1(inputLinesArray)
+        val walkedInto = runPart1(inputLinesArray).visited - result.startPosition.let { (x, y, _) -> x to y }
 
-        val x = inputLinesList[0].length
-        val y = inputLinesList.size
-        outer@ for ((y, line) in inputLinesList.withIndex()) {
-            for ((x, char) in line.withIndex()) {
-                when (char) {
-                    '^', 'v', '<', '>' -> {
-                        posX = x
-                        posY = y
-                        dir = when (char) {
-                            '^' -> N
-                            'v' -> S
-                            '<' -> W
-                            '>' -> E
-                            else -> throw IllegalStateException()
-                        }
-                        break@outer
-                    }
-                }
-            }
-        }
-
-        val walkedInto = mutableSetOf<Pair<Int, Int>>()
-
-        var nextX = 0
-        var nextY = 0
-        while (true) {
-
-            nextX = posX
-            nextY = posY
-            when (dir) {
-                N -> nextY--
-                E -> nextX++
-                S -> nextY++
-                W -> nextX--
-            }
-            if (nextX !in 0 until x || nextY !in 0 until y) {
-                break
-            }
-            if (inputLinesList[nextY][nextX] == '#') {
-                when (dir) {
-                    N -> dir = E
-                    E -> dir = S
-                    S -> dir = W
-                    W -> dir = N
-                }
-            }
-            when (dir) {
-                N -> posY--
-                E -> posX++
-                S -> posY++
-                W -> posX--
-            }
-            walkedInto.add(posX to posY)
-        }
-
-        val count = walkedInto.chunkedParMap(10) { walkedIntoChunk ->
+        val count = walkedInto.chunkedParMap(walkedInto.size / cpu) { walkedIntoChunk ->
             walkedIntoChunk.count { stepped ->
                 val (steppedX, steppedY) = stepped
-                val fakeList = List(inputLinesList.size) { iterY ->
-                    if (iterY == steppedY) {
-                        inputLinesList[iterY].toCharArray().let { it[steppedX] = '#'; it.concatToString() }
-                    } else {
-                        inputLinesList[iterY]
-                    }
+                if (inputLinesList[steppedY][steppedX] != '.') {
+                    return@count false
                 }
 
                 try {
-                    runPart1(fakeList)
+                    runPart1(inputLinesArray, startPosition = result.startPosition, shadow = stepped)
                     false
                 } catch (e: IllegalStateException) {
                     if (e.message == "Loop detected") {
