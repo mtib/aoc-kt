@@ -84,7 +84,7 @@ object Day6: AocDay(2024, 6) {
 
     override suspend fun part2(): Any {
         val result = runPart1(inputLinesArray)
-        val walkedInto = runPart1(inputLinesArray).visited - result.startPosition.let { (x, y, _) -> x to y }
+        val walkedInto = result.visited - result.startPosition.let { (x, y, _) -> x to y }
 
         val count = walkedInto.chunkedParMap(walkedInto.size / cpu) { walkedIntoChunk ->
             walkedIntoChunk.count { stepped ->
