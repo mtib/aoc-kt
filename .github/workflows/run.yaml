@@ -27,7 +27,7 @@ jobs:
           SESSION: ${{ secrets.SESSION }}
           KETCHUP_TOKEN: ${{ secrets.KETCHUP_TOKEN }}
           USER_SNOWFLAKE: ${{ secrets.USER_SNOWFLAKE }}
-      - run: rm src/main/resources/day*.txt src/main/resources/*.json src/main/resources/*.png
+      - run: rm src/main/resources/day*.txt
       - run: ./gradlew fatJar
       - run: java -jar build/libs/*-all.jar all
         env:
