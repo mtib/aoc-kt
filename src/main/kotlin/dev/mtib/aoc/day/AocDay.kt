@@ -164,7 +164,7 @@ open class AocDay(
                         return@ketchup
                     }
                     val ketchupRequest = Request.Builder()
-                        .url("https://api.ketchup.mtib.dev/aoc/input/$snowflake/$year/$day/input")
+                        .url("https://api.ketchup.mtib.dev/aoc/input/$snowflake/$year/$day")
                         .get()
                         .addHeader("Authorization", "Bearer $ketchupToken")
                         .build()
@@ -173,9 +173,10 @@ open class AocDay(
                         logger.log(day=identity) {"failed to fetch input from Ketchup: ${response.code}"}
                         return@ketchup
                     }
-                    response.close()
                     logger.log(day=identity) {"fetched input from ketchup"}
-                    return@download response.body!!.string()
+                    return@download response.body!!.string().also {
+                        response.close()
+                    }
                 }
             }.onFailure { logger.error(e = it, year=identity.year, day=identity.day, part=null) { "error getting input from ketchup"} }
 
@@ -319,7 +320,7 @@ open class AocDay(
     }
 
     private var fakedInput: String? = null
-    val realInput: String by lazy {
+    private val realInput: String by lazy {
         if (!Path(inputLocation).exists()) {
             if (releaseTime.isAfter(ZonedDateTime.now())) {
                 throw DayNotReleasedException(identity)

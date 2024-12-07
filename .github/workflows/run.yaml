@@ -8,7 +8,7 @@ on:
       - '.github/workflows/run.yaml'
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,11 +18,22 @@ jobs:
           java-version: 23
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew build
+        env:
+          SESSION: ${{ secrets.SESSION }}
+          KETCHUP_TOKEN: ${{ secrets.KETCHUP_TOKEN }}
+          USER_SNOWFLAKE: ${{ secrets.USER_SNOWFLAKE }}
       - run: ./gradlew test
+        env:
+          SESSION: ${{ secrets.SESSION }}
+          KETCHUP_TOKEN: ${{ secrets.KETCHUP_TOKEN }}
+          USER_SNOWFLAKE: ${{ secrets.USER_SNOWFLAKE }}
+      - run: rm src/main/resources/day*.txt src/main/resources/*.json src/main/resources/*.png
       - run: ./gradlew fatJar
       - run: java -jar build/libs/*-all.jar all
         env:
           SESSION: ${{ secrets.SESSION }}
+          KETCHUP_TOKEN: ${{ secrets.KETCHUP_TOKEN }}
+          USER_SNOWFLAKE: ${{ secrets.USER_SNOWFLAKE }}
       - run: |
           cp build/libs/*-all.jar src/main/resources/.
           cp build/libs/*-all.jar src/main/resources/aoc-kt-latest-all.jar
