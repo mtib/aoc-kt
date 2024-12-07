@@ -1,24 +1,19 @@
 package dev.mtib.aoc.day
 
 import arrow.core.Either
-import arrow.core.None
 import arrow.core.Option
-import arrow.core.getOrElse
 import arrow.core.left
 import arrow.core.right
-import arrow.core.some
 import arrow.core.toOption
-import dev.mtib.aoc.util.AocLogger
 import dev.mtib.aoc.util.AocLogger.Companion.logger
 import dev.mtib.aoc.util.Day
 import dev.mtib.aoc.util.Year
 import dev.mtib.aoc.util.styleResult
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.reflections.Reflections
 import java.math.BigInteger
 import java.time.ZoneId
@@ -45,6 +40,7 @@ open class AocDay(
 
     companion object {
         private val solutions = mutableListOf<AocDay>()
+        private val client by lazy { OkHttpClient() }
         fun years(): Set<Year> = solutions.map { it.identity.toYear() }.toSet()
         fun get(day: Day): Option<AocDay> = solutions.find { it.identity == day }.toOption()
         fun getAll(): List<AocDay> = solutions.toList()
@@ -153,19 +149,77 @@ open class AocDay(
     val inputLocation = "src/main/resources/day_${year}_${day.toString().padStart(2, '0')}.txt"
     fun fetchInput() {
         val token = System.getenv("SESSION")
-        if (token.isNullOrBlank()) {
-            println("No AOC_SESSION environment variable found, please set it to your session token")
+        val ketchupToken = System.getenv("KETCHUP_TOKEN")
+        val snowflake = System.getenv("USER_SNOWFLAKE")
+        if (token.isNullOrBlank() && (ketchupToken.isNullOrBlank() || snowflake.isNullOrBlank())) {
+            logger.log(day = identity) {"No SESSION (AoC cookie) or KETCHUP_TOKEN environment variable found, please provide at least one."}
+        }
+        val path = Path(inputLocation)
+
+        val body: String? = run download@{
+            runCatching ketchup@{
+                if (!ketchupToken.isNullOrBlank()) {
+                    if (snowflake.isNullOrBlank()) {
+                        logger.log(day=identity) {"No USER_SNOWFLAKE environment variable found, please provide one."}
+                        return@ketchup
+                    }
+                    val ketchupRequest = Request.Builder()
+                        .url("https://api.ketchup.mtib.dev/aoc/input/$snowflake/$year/$day/input")
+                        .get()
+                        .addHeader("Authorization", "Bearer $ketchupToken")
+                        .build()
+                    val response = client.newCall(ketchupRequest).execute()
+                    if (response.code != 200) {
+                        logger.log(day=identity) {"failed to fetch input from Ketchup: ${response.code}"}
+                        return@ketchup
+                    }
+                    response.close()
+                    logger.log(day=identity) {"fetched input from ketchup"}
+                    return@download response.body!!.string()
+                }
+            }.onFailure { logger.error(e = it, year=identity.year, day=identity.day, part=null) { "error getting input from ketchup"} }
+
+            runCatching aoc@{
+                if (!token.isNullOrBlank()) {
+                    val aocRequest = Request.Builder()
+                        .url("https://adventofcode.com/$year/day/$day/input")
+                        .get()
+                        .addHeader("Cookie", "session=$token")
+                        .build()
+                    val response = client.newCall(aocRequest).execute()
+                    if (response.code != 200) {
+                        logger.log(day=identity) {"failed to fetch input from AoC: ${response.code}"}
+                        return@aoc
+                    }
+                    val body = response.body!!.string()
+                    response.close()
+                    logger.log(day=identity) {"fetched input from aoc"}
+                    if (!ketchupToken.isNullOrBlank() && !snowflake.isNullOrBlank()) {
+                        val ketchupRequest = Request.Builder()
+                            .url("https://api.ketchup.mtib.dev/aoc/input/$snowflake/$year/$day")
+                            .put(body.toRequestBody())
+                            .addHeader("Authorization", "Bearer $ketchupToken")
+                            .build()
+                        val ketchupResponse = client.newCall(ketchupRequest).execute()
+                        if (ketchupResponse.code != 200) {
+                            logger.log(day=identity) {"failed to store input in Ketchup: ${ketchupResponse.code}"}
+                        }
+                        ketchupResponse.close()
+                        logger.log(day=identity) {"stored aoc input in ketchup"}
+                    }
+                    return@download body
+                }
+            }.onFailure { logger.error(e = it, year=identity.year, day=identity.day, part=null) { "error getting input from AoC"} }
+
+            null
+        }
+        if (body == null) {
             return
         }
-        val client = OkHttpClient()
-        val request = Request.Builder()
-            .url("https://adventofcode.com/$year/day/$day/input")
-            .get()
-            .addHeader("Cookie", "session=$token")
-            .build()
-        val response = client.newCall(request).execute()
-        val body = response.body!!.string()
-        Path(inputLocation).writeText(body)
+        path.writeText(body)
+
+        // Some time for FS to sync
+        Thread.sleep(10)
     }
 
     class DayNotReleasedException(day: Day) : Exception(
@@ -224,9 +278,9 @@ open class AocDay(
             """.trimIndent())
             codeSnippets.forEachIndexed { index, code ->
                 appendLine(
-                "    val snippet${index} = \"\"\"\n${
-                    code.trimEnd().lines().joinToString("\n") { " ".repeat(8) + it }
-                }\n    \"\"\".trimIndent()"
+                    "    val snippet${index} = \"\"\"\n${
+                        code.trimEnd().lines().joinToString("\n") { " ".repeat(8) + it }
+                    }\n    \"\"\".trimIndent()"
                 )
             }
             appendLine("""
@@ -254,11 +308,17 @@ open class AocDay(
     }
 
     suspend fun <T> withInput(input: String, block: suspend AocDay.() -> T): T {
-        fakedInput = input.some()
-        return this.block().also { fakedInput = None }
+        fakedInput = input
+        _inputLinesList = null
+        _inputLinesArray = null
+        return this.block().also {
+            fakedInput = null
+            _inputLinesList = null
+            _inputLinesArray = null
+        }
     }
 
-    private var fakedInput: Option<String> = None
+    private var fakedInput: String? = null
     val realInput: String by lazy {
         if (!Path(inputLocation).exists()) {
             if (releaseTime.isAfter(ZonedDateTime.now())) {
@@ -270,13 +330,19 @@ open class AocDay(
     }
 
     val input: String
-        get() = fakedInput.getOrElse { realInput }
+        get() = fakedInput ?: realInput
 
+    private var _inputLinesList: List<String>? = null
     val inputLinesList: List<String>
-        get() = input.lines()
+        get() = _inputLinesList ?: input.lines().also {
+            _inputLinesList = it
+        }
 
+    private var _inputLinesArray: Array<CharArray>? = null
     val inputLinesArray: Array<CharArray>
-        get() = inputLinesList.map{it.toCharArray()}.toTypedArray()
+        get() = _inputLinesArray ?: inputLinesList.map{it.toCharArray()}.toTypedArray().also {
+            _inputLinesArray = it
+        }
 
     override suspend fun part1(): Any {
         throw NotImplementedError()
@@ -286,5 +352,9 @@ open class AocDay(
         throw NotImplementedError()
     }
 
-    open suspend fun teardown() {}
+    open suspend fun teardown() {
+        // No cheating!
+        _inputLinesArray = null
+        _inputLinesList = null
+    }
 }

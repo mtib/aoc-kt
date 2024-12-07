@@ -224,6 +224,7 @@ private suspend fun benchmark(
                 measureTime { block() }.also {
                     durations.add(it)
                 }
+                System.gc()
                 teardown()
                 yield()
             }

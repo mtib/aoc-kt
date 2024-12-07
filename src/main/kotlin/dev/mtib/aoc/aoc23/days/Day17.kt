@@ -141,11 +141,12 @@ object Day17 : AbstractDay(17) {
     override fun solvePart1(input: Array<String>): Any? {
         val parsedMap = parseMap(input)
         val path = bfs(parsedMap)
-        printMap(parsedMap, path)
+        // printMap(parsedMap, path)
         return path.drop(1).sumOf { input[it.y][it.x].digitToInt() }
     }
 
     override fun solvePart2(input: Array<String>): Any? {
+        /*
         logger.log {
             val exampleMap = parseMap(
                 """111111111111
@@ -162,9 +163,10 @@ object Day17 : AbstractDay(17) {
             }
             "verified path"
         }
+         */
         val parsedMap = parseMap(input)
         val path = bfs(parsedMap, minStraight = 4, maxStraight = 10)
-        printMap(parsedMap, path)
+        // printMap(parsedMap, path)
         return path.drop(1).sumOf { input[it.y][it.x].digitToInt() }
     }
 }
