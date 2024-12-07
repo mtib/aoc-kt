@@ -1,6 +1,7 @@
 package dev.mtib.aoc.aoc24.days
 
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
 
 class Day7Test : FunSpec({
     val snippet0 = """
@@ -22,6 +23,12 @@ class Day7Test : FunSpec({
                 // Ignore allowed exception
             }
         }
+
+        test("example") {
+            Day7.withInput(snippet0) {
+                Day7.part1() shouldBe 3749.toBigInteger()
+            }
+        }
     }
     context("part2") {
         test("doesn't throw") {
@@ -29,6 +36,11 @@ class Day7Test : FunSpec({
                 Day7.part2()
             } catch (e: NotImplementedError) {
                 // Ignore allowed exception
+            }
+        }
+        test("example") {
+            Day7.withInput(snippet0) {
+                Day7.part2() shouldBe 11387.toBigInteger()
             }
         }
     }

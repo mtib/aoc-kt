@@ -187,6 +187,9 @@ open class AocDay(
         if (releaseTime.isAfter(ZonedDateTime.now())) {
             return
         }
+        if (!System.getenv("CI").isNullOrBlank()) {
+            return
+        }
         val token = System.getenv("SESSION")
         if (token.isNullOrBlank()) {
             return
