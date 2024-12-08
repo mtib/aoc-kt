@@ -1,6 +1,8 @@
 package dev.mtib.aoc.aoc24.days
 
 import dev.mtib.aoc.day.AocDay
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 
 object Day8 : AocDay(2024, 8) {
     @JvmInline
@@ -19,7 +21,8 @@ object Day8 : AocDay(2024, 8) {
         val position: Vector,
         val frequency: Frequency
     )
-    override suspend fun part1(): Any {
+
+    private fun solvePart(loop: Boolean): Int {
         val antennas = inputLinesArray.mapIndexed { y, line ->
             buildList {
                 line.mapIndexed { x, frequency ->
@@ -34,8 +37,8 @@ object Day8 : AocDay(2024, 8) {
         val xRange = inputLinesArray[0].indices
         val yRange = inputLinesArray.indices
 
-        return buildSet<Vector> {
-            antennas.values.forEach { sameFreqAntennas ->
+        return buildSet {
+            antennas.values.map { sameFreqAntennas ->
                 for (i in sameFreqAntennas.indices) {
                     for (j in (i+1)..sameFreqAntennas.lastIndex) {
                         val antenna1 = sameFreqAntennas[i]
@@ -45,14 +48,36 @@ object Day8 : AocDay(2024, 8) {
                             Vector(antenna2.position.x - it.x, antenna2.position.y - it.y)
                         }
 
-                        (antenna2.position + walkDiff).let {
-                            if (it.inRange(xRange, yRange)) {
-                                add(it)
+                        var found = false
+                        var stepLength = 0
+                        if (loop) {
+                            while (found || stepLength == 0) {
+                                found = false
+                                val step = walkDiff * stepLength
+                                (antenna2.position + step).let {
+                                    if (it.inRange(xRange, yRange)) {
+                                        found = true
+                                        add(it)
+                                    }
+                                }
+                                (antenna1.position - step).let {
+                                    if (it.inRange(xRange, yRange)) {
+                                        found = true
+                                        add(it)
+                                    }
+                                }
+                                stepLength++
                             }
-                        }
-                        (antenna1.position - walkDiff).let {
-                            if (it.inRange(xRange, yRange)) {
-                                add(it)
+                        } else {
+                            (antenna2.position + walkDiff).let {
+                                if (it.inRange(xRange, yRange)) {
+                                    add(it)
+                                }
+                            }
+                            (antenna1.position - walkDiff).let {
+                                if (it.inRange(xRange, yRange)) {
+                                    add(it)
+                                }
                             }
                         }
                     }
@@ -61,55 +86,11 @@ object Day8 : AocDay(2024, 8) {
         }.count()
     }
 
+    override suspend fun part1(): Any {
+        return solvePart(false)
+    }
+
     override suspend fun part2(): Any {
-        val antennas = inputLinesArray.mapIndexed { y, line ->
-            buildList {
-                line.mapIndexed { x, frequency ->
-                    if (frequency == '.') {
-                        return@mapIndexed
-                    }
-                    add(Antenna(Vector(x, y), Frequency(frequency)))
-                }
-            }
-        }.flatten().groupBy { it.frequency }
-
-        val xRange = inputLinesArray[0].indices
-        val yRange = inputLinesArray.indices
-
-        return buildSet<Vector> {
-            antennas.values.forEach { sameFreqAntennas ->
-                for (i in sameFreqAntennas.indices) {
-                    for (j in (i+1)..sameFreqAntennas.lastIndex) {
-                        val antenna1 = sameFreqAntennas[i]
-                        val antenna2 = sameFreqAntennas[j]
-
-                        val walkDiff = antenna1.position.let {
-                            Vector(antenna2.position.x - it.x, antenna2.position.y - it.y)
-                        }
-
-
-                        var found = false
-                        var stepLength = 0
-                        while (found || stepLength == 0) {
-                            found = false
-                            val step = walkDiff * stepLength
-                            (antenna2.position + step).let {
-                                if (it.inRange(xRange, yRange)) {
-                                    found = true
-                                    add(it)
-                                }
-                            }
-                            (antenna1.position - step).let {
-                                if (it.inRange(xRange, yRange)) {
-                                    found = true
-                                    add(it)
-                                }
-                            }
-                            stepLength++
-                        }
-                    }
-                }
-            }
-        }.count()
+        return solvePart(true)
     }
 }

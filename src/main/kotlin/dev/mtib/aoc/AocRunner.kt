@@ -9,6 +9,7 @@ import dev.mtib.aoc.benchmark.BenchmarkWindowPlotter
 import dev.mtib.aoc.day.AocDay
 import dev.mtib.aoc.day.PuzzleExecutor
 import dev.mtib.aoc.util.AocLogger
+import dev.mtib.aoc.util.AocLogger.Companion.error
 import dev.mtib.aoc.util.Day
 import dev.mtib.aoc.util.PuzzleIdentity
 import dev.mtib.aoc.util.Results
@@ -27,6 +28,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.microseconds
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
 import kotlin.time.measureTimedValue
@@ -106,9 +108,13 @@ suspend fun main(args: Array<String>) {
     Results.collect()
 
     cleanupScope.coroutineContext[Job]?.also {
-        logger.log(AocLogger.Main) { "post-processing" }
-        it.start()
-        joinAll(*it.children.toList().toTypedArray())
+        try {
+            logger.log(AocLogger.Main) { "post-processing" }
+            it.start()
+            joinAll(*it.children.toList().toTypedArray())
+        } catch (e: UnsatisfiedLinkError) {
+            AocLogger.Main.error(e = null) { "failed to plot: ${e.message}" }
+        }
     }
 
     logger.log(AocLogger.Main) { "done" }
@@ -237,15 +243,28 @@ private suspend fun benchmark(
             }
             .toDouble()
             .microseconds
+        val lastBest = Results.getLastSubmittedBenchmarkResult(puzzle)
         Results.send(BenchmarkResult(average, durations.size.toLong(), puzzle))
         cleanupScope.launch(start = CoroutineStart.LAZY) {
             BenchmarkWindowPlotter(puzzle, BENCHMARK_WINDOW, durations).plot()
         }
         val styledCommand =
             (TextStyles.italic + TextColors.blue)("/aoc_benchmark day:${puzzle.day} part:${puzzle.part} time_milliseconds:${average.inWholeMicroseconds / 1000.0}")
+        val improvementText = lastBest?.let {
+            val lastSubmittedDuration = it.timeMs.milliseconds
+            if (average < lastSubmittedDuration) {
+                val improvement = lastSubmittedDuration - average
+                " improved by ${TextColors.brightGreen(improvement.toString())}"
+            } else if (average > lastSubmittedDuration) {
+                val degradation = average - lastSubmittedDuration
+                " degraded by ${TextColors.brightRed(degradation.toString())}"
+            } else {
+                null
+            }
+        } ?: ""
         logger.log(
             puzzle
-        ) { "averaged at ${TextColors.brightWhite(average.toString())}, report with: $styledCommand" }
+        ) { "averaged at ${TextColors.brightWhite(average.toString())}$improvementText, report with: $styledCommand" }
     } catch (e: NotImplementedError) {
         logger.error(e = null, puzzle) { "not implemented" }
     } catch (e: AocDay.DayNotReleasedException) {

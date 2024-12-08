@@ -1,8 +1,6 @@
 package dev.mtib.aoc.util
 
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.*
 
 suspend fun <T, R> Iterable<T>.chunkedParMap(chunkSize: Int, block: suspend (List<T>) -> R): List<R> = coroutineScope {
     chunked(chunkSize.coerceAtLeast(1)).map { chunk ->
@@ -10,6 +8,14 @@ suspend fun <T, R> Iterable<T>.chunkedParMap(chunkSize: Int, block: suspend (Lis
             block(chunk)
         }
     }.awaitAll()
+}
+
+suspend fun <T> Iterable<T>.chunkedParLaunch(chunkSize: Int, block: suspend (List<T>) -> Unit): List<Job> = coroutineScope {
+    chunked(chunkSize.coerceAtLeast(1)).map { chunk ->
+        launch {
+            block(chunk)
+        }
+    }
 }
 
 /**

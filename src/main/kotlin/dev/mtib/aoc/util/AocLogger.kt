@@ -118,6 +118,11 @@ class AocLogger private constructor(
         val AocDay.logger
             get() = AocLogger(this)
 
+        fun Main.error(e: Throwable? = null, message: () -> String) {
+            AocLogger(null).error(e, year = null, day = null, part = null, message = message)
+        }
+
+
         private fun getStyledPrefix(year: Int?, day: Int?, part: Int?): String {
             return when {
                 year != null -> TextColors.brightWhite(
@@ -138,6 +143,10 @@ class AocLogger private constructor(
 
                 else -> TextColors.brightWhite("[" + TextColors.gray("         ") + "]")
             }
+        }
+
+        fun formatLineAsLog(identity: PuzzleIdentity, line: String): String {
+            return formatLineAsLog(identity.year, identity.day, identity.part, line)
         }
 
         fun formatLineAsLog(year: Int? = null, day: Int? = null, part: Int? = null, line: String): String {

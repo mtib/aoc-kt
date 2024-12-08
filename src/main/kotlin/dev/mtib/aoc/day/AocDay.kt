@@ -5,10 +5,10 @@ import arrow.core.Option
 import arrow.core.left
 import arrow.core.right
 import arrow.core.toOption
+import dev.mtib.aoc.regenerateAocDayLoader
+import dev.mtib.aoc.util.*
+import dev.mtib.aoc.util.AocLogger.Companion.error
 import dev.mtib.aoc.util.AocLogger.Companion.logger
-import dev.mtib.aoc.util.Day
-import dev.mtib.aoc.util.Year
-import dev.mtib.aoc.util.styleResult
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
@@ -58,10 +58,20 @@ open class AocDay(
         }
 
         fun load() {
-            val packageName = AocDay::class.java.packageName.split(".").dropLast(1).joinToString(".")
+            AocDayLoader.allDays.forEach {
+                if (it !in solutions) {
+                    solutions.add(it)
+                }
+            }
+            try {
+                val packageName = AocDay::class.java.packageName.split(".").dropLast(1).joinToString(".")
 
-            Reflections(packageName).getSubTypesOf(AocDay::class.java).forEach {
-                Class.forName(it.name) // This loads the "class" of the object, which registers itself in `solutions` during init.
+                Reflections(packageName).getSubTypesOf(AocDay::class.java).forEach {
+                    Class.forName(it.name) // This loads the "class" of the object, which registers itself in `solutions` during init.
+                }
+                regenerateAocDayLoader()
+            } catch (e: Exception) {
+                AocLogger.Main.error(e) { "failed to load AocDay classes" }
             }
         }
     }

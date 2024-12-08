@@ -7,8 +7,10 @@ import dev.mtib.aoc.util.AocLogger.Companion.resultTheme
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.toList
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
+import okhttp3.OkHttpClient
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -32,6 +34,14 @@ object Results {
     private val path = Path("src/main/resources/results.json")
     private val startTime = System.currentTimeMillis()
     private val runDataChannel = Channel<RunData>(Channel.UNLIMITED)
+
+    val ketchupToken: String? by lazy {
+        System.getenv("KETCHUP_TOKEN")
+    }
+
+    val userSnowflake: String? by lazy {
+        System.getenv("USER_SNOWFLAKE")
+    }
 
     private const val REDIS_KEY = "aoc-results"
     private enum class StorageLocation {
@@ -295,6 +305,70 @@ object Results {
         }
     }
 
+    fun getLastVerifiedBenchmarkResult(puzzle: PuzzleIdentity): Result? {
+        return when (storageLocation) {
+            StorageLocation.FILE -> {
+                val results= get(puzzle.year)
+                results.filter { it.day == puzzle.day && it.part == puzzle.part && results.any { otherResult -> otherResult.day == it.day && otherResult.part == it.part && otherResult.verified && otherResult.cookie == it.cookie } && it.benchmarkMicros != null }.maxByOrNull { it.timestamp }
+            }
+            StorageLocation.REDIS -> {
+                val verifiedResults = getWithFilter("@.year == ${puzzle.year} && @.day == ${puzzle.day} && @.part == ${puzzle.part} && @.verified == true")
+                val results = getWithFilter("@.year == ${puzzle.year} && @.day == ${puzzle.day} && @.part == ${puzzle.part}")
+                results.filter { result -> result.result != null && verifiedResults.any { it.cookie == result.cookie && it.result == result.result } && result.benchmarkMicros != null }.maxByOrNull { it.timestamp }
+            }
+        }
+    }
+
+    data class ApiBenchmark(
+        val identity: PuzzleIdentity,
+        val timeMs: Double,
+        val timestamp: Instant,
+    )
+
+    fun getLastSubmittedBenchmarkResult(puzzle: PuzzleIdentity): ApiBenchmark? {
+        if (ketchupToken == null || userSnowflake == null) {
+            logger.log(puzzle) { "can't fetch last submitted benchmark result: missing env" }
+            return null
+        }
+        try {
+            val client = OkHttpClient()
+            val request = okhttp3.Request.Builder()
+                .url("https://api.ketchup.mtib.dev/aoc/benchmark/user/${userSnowflake}")
+                .header("Authorization", "Bearer $ketchupToken")
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    logger.log(puzzle) { "failed to fetch last submitted benchmark result: ${response.code} ${response.message}" }
+                    return null
+                }
+                val json = Json { ignoreUnknownKeys = true }
+                val node = json.decodeFromString<JsonElement>(response.body?.string() ?: return null)
+                val benchmarks =
+                    node.jsonObject["benchmarks"]?.jsonObject?.get(puzzle.year.toString())?.jsonObject?.get(puzzle.day.toString())?.jsonObject?.get(
+                        puzzle.part.toString()
+                    )?.jsonArray?.let {
+                        it.map { benchmark ->
+                            val obj = benchmark.jsonObject
+                            ApiBenchmark(
+                                identity = PuzzleIdentity(
+                                    year = obj["event"]!!.jsonPrimitive.content.toInt(),
+                                    day = obj["day"]!!.jsonPrimitive.int,
+                                    part = obj["part"]!!.jsonPrimitive.int,
+                                ),
+                                timeMs = obj["time_ms"]!!.jsonPrimitive.double,
+                                timestamp = Instant.ofEpochSecond(obj["timestamp"]!!.jsonPrimitive.double.toLong())
+                            )
+                        }
+                    } ?: return null
+                return benchmarks.maxByOrNull { it.timestamp }
+            }
+        } catch(e: Exception) {
+            logger.error(e, puzzle) { "failed to fetch last submitted benchmark result" }
+            return null
+        }
+    }
+
     suspend fun send(result: RunData) {
         runDataChannel.send(result)
     }
@@ -342,7 +416,7 @@ object Results {
             val good = Terminal().prompt(
                 AocLogger.formatLineAsLog(last.year, last.day, last.part, "is this correct?"),
                 choices = listOf("yes", "no", "y", "n"),
-                invalidChoiceMessage = AocLogger.formatLineAsLog(last.year, last.day, last.part, "invalid choice")
+                invalidChoiceMessage = AocLogger.formatLineAsLog(last.year, last.day, last.part, AocLogger.formatLineAsLog(identity=identity.puzzle, "invalid choice"))
             ) {
                 when (it) {
                     "yes", "y" -> {
