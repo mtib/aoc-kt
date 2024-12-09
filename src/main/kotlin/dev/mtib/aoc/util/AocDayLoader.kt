@@ -35,6 +35,7 @@ object AocDayLoader {
         Class.forName("dev.mtib.aoc.aoc24.days.Day6")
         Class.forName("dev.mtib.aoc.aoc24.days.Day7")
         Class.forName("dev.mtib.aoc.aoc24.days.Day8")
+        Class.forName("dev.mtib.aoc.aoc24.days.Day9")
     }
     
     val allDays: List<dev.mtib.aoc.day.AocDay> = listOf(
@@ -71,5 +72,6 @@ object AocDayLoader {
         dev.mtib.aoc.aoc24.days.Day6,
         dev.mtib.aoc.aoc24.days.Day7,
         dev.mtib.aoc.aoc24.days.Day8,
+        dev.mtib.aoc.aoc24.days.Day9,
     )
 }

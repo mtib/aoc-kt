@@ -258,10 +258,12 @@ private suspend fun benchmark(
             } else if (average > lastSubmittedDuration) {
                 val degradation = average - lastSubmittedDuration
                 " degraded by ${TextColors.brightRed(degradation.toString())}"
+            } else if (average == lastSubmittedDuration) {
+                " ${TextColors.gray("stayed the same")}"
             } else {
-                null
+                ""
             }
-        } ?: ""
+        } ?: " ${TextColors.brightBlue("new(?)")}"
         logger.log(
             puzzle
         ) { "averaged at ${TextColors.brightWhite(average.toString())}$improvementText, report with: $styledCommand" }

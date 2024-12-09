@@ -320,10 +320,12 @@ open class AocDay(
 
     suspend fun <T> withInput(input: String, block: suspend AocDay.() -> T): T {
         fakedInput = input
+        _inputArray = null
         _inputLinesList = null
         _inputLinesArray = null
         return this.block().also {
             fakedInput = null
+            _inputArray = null
             _inputLinesList = null
             _inputLinesArray = null
         }
@@ -342,6 +344,22 @@ open class AocDay(
 
     val input: String
         get() = fakedInput ?: realInput
+
+    private var _lineLength: Int? = null
+    val lineLength: Int
+        get() = _lineLength ?: input.indexOf('\n').also {
+        _lineLength = it
+    }
+    private var _inputArray: CharArray? = null
+
+    val inputArray: CharArray
+        get() = _inputArray ?: input.toCharArray().also {
+            _inputArray = it
+        }
+
+    fun getChar(x: Int, y: Int): Char {
+        return inputArray[y * lineLength + x + y]
+    }
 
     private var _inputLinesList: List<String>? = null
     val inputLinesList: List<String>
@@ -367,5 +385,6 @@ open class AocDay(
         // No cheating!
         _inputLinesArray = null
         _inputLinesList = null
+        _inputArray = null
     }
 }
