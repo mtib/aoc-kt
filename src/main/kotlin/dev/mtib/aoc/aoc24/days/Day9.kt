@@ -1,7 +1,7 @@
 package dev.mtib.aoc.aoc24.days
 
 import dev.mtib.aoc.day.AocDay
-import dev.mtib.aoc.util.AocLogger.Companion.logger
+import dev.mtib.aoc.util.chunkedParMap
 import java.math.BigInteger
 import kotlin.math.min
 
@@ -16,135 +16,141 @@ object Day9: AocDay(2024, 9) {
         size: Int,
     ) : Descriptor(size)
 
-    private fun blockMemCompress(): BigInteger {
-        val malloc = buildList<Descriptor> {
-            for ((i, c) in input.withIndex()) {
+    private suspend fun MutableList<Descriptor>.readInput() {
+        return input.withIndex().chunkedParMap(5000) { part ->
+            part.mapNotNull { (i, c) ->
                 val isFile = i % 2 == 0
                 val size = c - '0'
                 if (size > 0) {
                     if (isFile) {
-                        add(File(i/2, size))
+                        File(i/2, size)
                     } else {
-                        add(Free(size))
+                        Free(size)
                     }
-                }
-            }
-
-            while (true) {
-                val lastFileIndex = indexOfLast { it is File }
-                val firstFreeIndex = indexOfFirst { it is Free }
-
-                if (firstFreeIndex == -1) {
-                    break
-                }
-
-                val lastFile = get(lastFileIndex) as File
-                val free = get(firstFreeIndex) as Free
-
-                val blocksToMove = min(lastFile.size, free.size)
-
-                val newFileLeft = File(lastFile.ID, blocksToMove)
-                val newFileRight = File(lastFile.ID, lastFile.size - blocksToMove)
-                val newFree = Free(free.size - blocksToMove)
-
-                if (newFree.size == 0) {
-                    removeAt(firstFreeIndex)
                 } else {
-                    set(firstFreeIndex, newFree)
-                }
-                add(firstFreeIndex, newFileLeft)
-                if (newFileRight.size > 0) {
-                    set(lastFileIndex + if (newFree.size != 0) 1 else 0, newFileRight)
-                } else {
-                    removeAt(lastFileIndex + if (newFree.size != 0) 1 else 0)
+                    null
                 }
             }
-        }
-
-        return buildList<Int> {
-            for (file in malloc as List<File>) {
-                repeat(file.size) {
-                    add(file.ID)
-                }
-            }
-        }.withIndex().fold(BigInteger.ZERO) { acc, (i, v) -> (i * v).toBigInteger() + acc }
+        }.forEach { addAll(it) }
     }
 
-    private fun fileMemCompress(): BigInteger {
+    private fun MutableList<Descriptor>.moveBlocks(): Boolean {
+        val lastFileIndex = indexOfLast { it is File }
+        val firstFreeIndex = indexOfFirst { it is Free }
+
+        if (firstFreeIndex == -1) {
+            return false
+        }
+
+        val lastFile = get(lastFileIndex) as File
+        val free = get(firstFreeIndex) as Free
+
+        val blocksToMove = min(lastFile.size, free.size)
+
+        val newFileLeft = File(lastFile.ID, blocksToMove)
+        val newFileRight = File(lastFile.ID, lastFile.size - blocksToMove)
+        val newFree = Free(free.size - blocksToMove)
+
+        if (newFree.size == 0) {
+            removeAt(firstFreeIndex)
+        } else {
+            set(firstFreeIndex, newFree)
+        }
+        add(firstFreeIndex, newFileLeft)
+        if (newFileRight.size > 0) {
+            set(lastFileIndex + if (newFree.size != 0) 1 else 0, newFileRight)
+        } else {
+            removeAt(lastFileIndex + if (newFree.size != 0) 1 else 0)
+        }
+        return true
+    }
+
+    private suspend fun blockMemCompress(): Long {
         val malloc = buildList<Descriptor> {
-            for ((i, c) in input.withIndex()) {
-                val isFile = i % 2 == 0
-                val size = c - '0'
-                if (size > 0) {
-                    if (isFile) {
-                        add(File(i/2, size))
-                    } else {
-                        add(Free(size))
-                    }
+            readInput()
+
+            while (true) {
+                if (!moveBlocks()) {
+                    break
                 }
-            }
-
-            for (lastFile in filterIsInstance<File>().reversed()) {
-                val free = withIndex().firstOrNull { it.value is Free && it.value.size >= lastFile.size } as IndexedValue<Free>?
-
-                if (free == null) {
-                    continue
-                }
-
-                val lastFileIndex = indexOfLast { it is File && it.ID == lastFile.ID }
-                if (lastFileIndex < free.index) {
-                    continue
-                }
-
-                val beforeLastFile = getOrNull(lastFileIndex - 1)
-                val afterLastFile = getOrNull(lastFileIndex + 1)
-
-                if (beforeLastFile != free.value && beforeLastFile is Free && afterLastFile is Free) {
-                    removeAt(lastFileIndex + 1)
-                    removeAt(lastFileIndex)
-                    set(lastFileIndex - 1, Free(beforeLastFile.size + lastFile.size + afterLastFile.size))
-                } else if (beforeLastFile != free.value && beforeLastFile is Free) {
-                    removeAt(lastFileIndex)
-                    set(lastFileIndex - 1, Free(beforeLastFile.size + lastFile.size))
-                } else if (afterLastFile is Free) {
-                    removeAt(lastFileIndex + 1)
-                    set(lastFileIndex, Free(lastFile.size + afterLastFile.size))
-                } else {
-                    set(lastFileIndex, Free(lastFile.size))
-                }
-
-                val afterFree = getOrNull(free.index + 1)
-
-                val newFree = Free(free.value.size - lastFile.size + if (afterFree is Free) afterFree.size else 0)
-                if(newFree.size == 0) {
-                    removeAt(free.index)
-                } else {
-                    set(free.index, newFree)
-                    if(afterFree is Free) {
-                        removeAt(free.index + 1)
-                    }
-                }
-
-                add(free.index, lastFile)
-            }
-
-            while (last() is Free) {
-                removeLast()
             }
         }
 
-        return buildList<Int> {
+        return sequence<Long> {
+            for (file in malloc as List<File>) {
+                repeat(file.size) {
+                    yield(file.ID.toLong())
+                }
+            }
+        }.withIndex().fold(0L) { acc, (i, v) -> (i * v) + acc }
+    }
+
+    private fun MutableList<Descriptor>.moveFile(file: File) {
+        val freeIndex = indexOfFirst { it is Free && it.size >= file.size }
+        if (freeIndex == -1) {
+            return
+        }
+
+        val free = get(freeIndex) as Free
+
+        val lastFileIndex = indexOfLast { it is File && it.ID == file.ID }
+        if (lastFileIndex < freeIndex) {
+            return
+        }
+
+        val beforeLastFile = getOrNull(lastFileIndex - 1)
+        val afterLastFile = getOrNull(lastFileIndex + 1)
+
+        if (lastFileIndex - 1 != freeIndex && beforeLastFile is Free && afterLastFile is Free) {
+            removeAt(lastFileIndex + 1)
+            removeAt(lastFileIndex)
+            set(lastFileIndex - 1, Free(beforeLastFile.size + file.size + afterLastFile.size))
+        } else if (lastFileIndex - 1 != freeIndex && beforeLastFile is Free) {
+            removeAt(lastFileIndex)
+            set(lastFileIndex - 1, Free(beforeLastFile.size + file.size))
+        } else if (afterLastFile is Free) {
+            removeAt(lastFileIndex + 1)
+            set(lastFileIndex, Free(file.size + afterLastFile.size))
+        } else {
+            set(lastFileIndex, Free(file.size))
+        }
+
+        val afterFree = getOrNull(freeIndex + 1)
+
+        val newFree = Free(free.size - file.size + if (afterFree is Free) afterFree.size else 0)
+        if(newFree.size == 0) {
+            removeAt(freeIndex)
+        } else {
+            set(freeIndex, newFree)
+            if(afterFree is Free) {
+                removeAt(freeIndex + 1)
+            }
+        }
+
+        add(freeIndex, file)
+    }
+
+    private suspend fun fileMemCompress(): Long {
+        val malloc = buildList<Descriptor> {
+            readInput()
+
+            for (lastFile in filterIsInstance<File>().reversed()) {
+                moveFile(lastFile)
+            }
+        }
+
+        return sequence<Long> {
             for (descriptor in malloc) {
                 repeat(descriptor.size) {
                     when(descriptor) {
-                        is File -> add(descriptor.ID)
+                        is File -> yield(descriptor.ID.toLong())
                         is Free -> {
-                            add(0)
+                            yield(0)
                         }
                     }
                 }
             }
-        }.withIndex().fold(BigInteger.ZERO) { acc, (i, v) -> (i * v).toBigInteger() + acc }
+        }.withIndex().fold(0L) { acc, (i, v) -> (i * v) + acc }
     }
 
     override suspend fun part1(): Any {
