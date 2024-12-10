@@ -2,12 +2,18 @@ package dev.mtib.aoc.aoc24.days
 
 import dev.mtib.aoc.aoc24.days.Day6.Direction.*
 import dev.mtib.aoc.day.AocDay
-import dev.mtib.aoc.util.AocLogger.Companion.logger
 import dev.mtib.aoc.util.chunkedParMap
 
 object Day6: AocDay(2024, 6) {
-    private enum class Direction {
-        N, E, S, W
+    private enum class Direction(private val char: Char) {
+        N('^'), E('>'), S('v'), W('<');
+        companion object {
+            fun fromChar(char: Char): Direction {
+                return entries.find { it.char == char } ?: throw IllegalArgumentException("Unknown direction: $char")
+            }
+            val all = entries.toSet()
+            val allChars = all.map { it.char }.toSet()
+        }
     }
 
     private data class Solution(
@@ -25,23 +31,16 @@ object Day6: AocDay(2024, 6) {
         }
     }
 
-    private fun runPart1(lines: Array<CharArray>, startPosition: Triple<Int, Int, Direction>? = null, shadow: Pair<Int, Int>? = null, skipPart2Work: Boolean = false): Solution {
-        val x = lines[0].size
-        val y = lines.size
+    private fun runPart1(startPosition: Triple<Int, Int, Direction>? = null, shadow: Pair<Int, Int>? = null, skipPart2Work: Boolean = false): Solution {
+        val x = lineLength
+        val y = inputArray.size / x
 
         val startPosition = startPosition ?: run {
-            for ((ly, line) in lines.withIndex()) {
-                for ((lx, char) in line.withIndex()) {
-                    when (char) {
-                        '^','v','<','>' -> {
-                            return@run Triple(lx, ly, when (char) {
-                                '^' -> N
-                                'v' -> S
-                                '<' -> W
-                                '>' -> E
-                                else -> throw IllegalStateException()
-                            })
-                        }
+            for (ly in 0..y) {
+                for (lx in 0..x) {
+                    val char = getChar(lx, ly)
+                    if (char in Direction.allChars) {
+                        return@run Triple(lx, ly, Direction.fromChar(char))
                     }
                 }
             }
@@ -83,7 +82,7 @@ object Day6: AocDay(2024, 6) {
                 if (nextX !in 0 until x || nextY !in 0 until y) {
                     break@outer
                 }
-                bad = (shadow?.first == nextX && shadow.second == nextY) || lines[nextY][nextX] == '#'
+                bad = (shadow?.first == nextX && shadow.second == nextY) || getChar(nextX, nextY) == '#'
                 if (bad) {
                     dir = when (dir) {
                         N -> E
@@ -99,11 +98,11 @@ object Day6: AocDay(2024, 6) {
         return Solution(visited, visitedInOrder, startPosition)
     }
     override suspend fun part1(): Any {
-        return runPart1(inputLinesArray, skipPart2Work = true).visited.size
+        return runPart1(skipPart2Work = true).visited.size
     }
 
     override suspend fun part2(): Any {
-        val result = runPart1(inputLinesArray)
+        val result = runPart1()
         val walkedInto = result.visitedInOrder.filterNot { it.first == result.startPosition.first && it.second == result.startPosition.second }
             .fold(mutableListOf<Triple<Int, Int, Direction>>()) { acc, (x, y, d) ->
                 if (acc.any { it.first == x && it.second == y }) acc else acc.apply {
@@ -116,12 +115,12 @@ object Day6: AocDay(2024, 6) {
         val count = walkedInto.chunkedParMap(walkedInto.size / cpu) { walkedIntoChunk ->
             walkedIntoChunk.count { stepped ->
                 val (steppedX, steppedY) = stepped
-                if (inputLinesList[steppedY][steppedX] != '.') {
+                if (getChar(steppedX, steppedY) != '.') {
                     return@count false
                 }
 
                 try {
-                    runPart1(inputLinesArray, startPosition = stepped.backward(), shadow = stepped.first to stepped.second)
+                    runPart1(startPosition = stepped.backward(), shadow = stepped.first to stepped.second)
                     false
                 } catch (e: IllegalStateException) {
                     if (e.message == "Loop detected") {
@@ -133,10 +132,6 @@ object Day6: AocDay(2024, 6) {
             }
         }.sum()
 
-        not(1812)
-        not(2312)
-        not(2109)
-        not(3221)
         return count
     }
 }

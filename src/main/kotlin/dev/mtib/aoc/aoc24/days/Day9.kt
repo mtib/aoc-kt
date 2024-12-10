@@ -35,34 +35,43 @@ object Day9: AocDay(2024, 9) {
     }
 
     private fun MutableList<Descriptor>.moveBlocks(): Boolean {
-        val lastFileIndex = indexOfLast { it is File }
-        val firstFreeIndex = indexOfFirst { it is Free }
+        var lastFileIndex = indexOfLast { it is File }
+        var firstFreeIndex = subList(0, lastFileIndex).indexOfFirst { it is Free }
 
-        if (firstFreeIndex == -1) {
-            return false
+        while (firstFreeIndex != -1) {
+            val lastFile = get(lastFileIndex) as File
+            val free = get(firstFreeIndex) as Free
+
+            val blocksToMove = min(lastFile.size, free.size)
+
+            val newFileLeft = File(lastFile.ID, blocksToMove)
+            val newFileRight = File(lastFile.ID, lastFile.size - blocksToMove)
+            val newFree = Free(free.size - blocksToMove)
+
+            if (newFree.size == 0) {
+                removeAt(firstFreeIndex)
+            } else {
+                set(firstFreeIndex, newFree)
+            }
+            add(firstFreeIndex, newFileLeft)
+            if(newFree.size == 0) {
+                val newSubIndex = subList(firstFreeIndex + 1, toIndex = lastFileIndex).indexOfFirst { it is Free }
+                if (newSubIndex == -1) {
+                    firstFreeIndex = -1
+                } else {
+                    firstFreeIndex += 1 + newSubIndex
+                }
+            }
+            if (newFileRight.size > 0) {
+                lastFileIndex += if (newFree.size != 0) 1 else 0
+                set(lastFileIndex, newFileRight)
+            } else {
+                removeAt(lastFileIndex + if (newFree.size != 0) 1 else 0)
+                return true
+            }
         }
 
-        val lastFile = get(lastFileIndex) as File
-        val free = get(firstFreeIndex) as Free
-
-        val blocksToMove = min(lastFile.size, free.size)
-
-        val newFileLeft = File(lastFile.ID, blocksToMove)
-        val newFileRight = File(lastFile.ID, lastFile.size - blocksToMove)
-        val newFree = Free(free.size - blocksToMove)
-
-        if (newFree.size == 0) {
-            removeAt(firstFreeIndex)
-        } else {
-            set(firstFreeIndex, newFree)
-        }
-        add(firstFreeIndex, newFileLeft)
-        if (newFileRight.size > 0) {
-            set(lastFileIndex + if (newFree.size != 0) 1 else 0, newFileRight)
-        } else {
-            removeAt(lastFileIndex + if (newFree.size != 0) 1 else 0)
-        }
-        return true
+        return false
     }
 
     private suspend fun blockMemCompress(): Long {
@@ -77,7 +86,7 @@ object Day9: AocDay(2024, 9) {
         }
 
         return sequence<Long> {
-            for (file in malloc as List<File>) {
+            for (file in malloc.filterIsInstance<File>()) {
                 repeat(file.size) {
                     yield(file.ID.toLong())
                 }
