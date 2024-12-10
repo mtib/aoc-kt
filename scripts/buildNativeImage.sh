@@ -5,6 +5,15 @@ export SDKMAN_DIR="$HOME/.sdkman"
 
 sdk use java 23.0.1-graal
 ./gradlew fatJar
-java -agentlib:native-image-agent=config-output-dir=/path/to/config-dir/ -jar ./build/libs/aoc-kt-0.24.0-all.jar all
-native-image -jar ./build/libs/aoc-kt-0.24.0-all.jar -o build/libs/aoc-kt -march=native
 
+JAR_FILE=$(ls ./build/libs/aoc-kt-*-all.jar)
+mkdir -p ./build/tmp/native
+java -agentlib:native-image-agent=config-merge-dir=./build/tmp/native -Djava.awt.headless=true -jar $JAR_FILE 2024:all --no-plot
+native-image \
+  -march=native \
+  -H:ConfigurationFileDirectories=./build/tmp/native \
+  --parallelism=4 \
+  --initialize-at-run-time=dev.mtib.aoc.aoc23.days.Day10\$SubGridPosition\$Companion \
+  -Djava.awt.headless=true \
+  -o build/libs/aoc-kt \
+  -jar $JAR_FILE

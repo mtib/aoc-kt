@@ -26,6 +26,8 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.microseconds
 import kotlin.time.Duration.Companion.milliseconds
@@ -39,6 +41,9 @@ private val cleanupScope = CoroutineScope(Dispatchers.IO)
 const val BENCHMARK_WINDOW = 100
 const val BENCHMARK_TIMEOUT_SECONDS = 5
 const val BENCHMARK_TIMEOUT_OVERRIDE_ENV = "BENCHMARK_TIMEOUT_SECONDS"
+
+var plotFlag = true
+
 suspend fun main(args: Array<String>) {
     logger.log(AocLogger.Main) { "starting advent of code" }
     AocDay.load()
@@ -59,6 +64,7 @@ suspend fun main(args: Array<String>) {
                 return@forEach
             }
             when (arg) {
+                "--no-plot" -> plotFlag = false
                 "all" -> addAll(AocDay.getAll().days())
                 "latest" -> AocDay.getAll(mostRecentYear).days().maxOrNull()?.also { add(it) }
                 else -> {
@@ -161,8 +167,10 @@ suspend fun runDay(day: Day) {
         }
     }
 
-    cleanupScope.launch(start = CoroutineStart.LAZY) {
-        BenchmarkProgressPlotter(day).plot()
+    if (plotFlag) {
+        cleanupScope.launch(start = CoroutineStart.LAZY) {
+            BenchmarkProgressPlotter(day).plot()
+        }
     }
 }
 
@@ -245,8 +253,10 @@ private suspend fun benchmark(
             .microseconds
         val lastBest = Results.getLastSubmittedBenchmarkResult(puzzle)
         Results.send(BenchmarkResult(average, durations.size.toLong(), puzzle))
-        cleanupScope.launch(start = CoroutineStart.LAZY) {
-            BenchmarkWindowPlotter(puzzle, BENCHMARK_WINDOW, durations).plot()
+        if (plotFlag) {
+            cleanupScope.launch(start = CoroutineStart.LAZY) {
+                BenchmarkWindowPlotter(puzzle, BENCHMARK_WINDOW, durations).plot()
+            }
         }
         val styledCommand =
             (TextStyles.italic + TextColors.blue)("/aoc_benchmark day:${puzzle.day} part:${puzzle.part} time_milliseconds:${average.inWholeMicroseconds / 1000.0}")
@@ -261,12 +271,27 @@ private suspend fun benchmark(
             } else if (average == lastSubmittedDuration) {
                 " ${TextColors.gray("stayed the same")}"
             } else {
-                ""
+                null
             }
-        } ?: " ${TextColors.brightBlue("new(?)")}"
+        }
+        val canReportWithDiscord = puzzle.year == ZonedDateTime.now(ZoneId.of("CET")).year
         logger.log(
             puzzle
-        ) { "averaged at ${TextColors.brightWhite(average.toString())}$improvementText, report with: $styledCommand" }
+        ) {
+            buildString {
+                append("averaged at ${TextColors.brightWhite(average.toString())}")
+
+                if (improvementText != null) {
+                    append(improvementText)
+                } else if (canReportWithDiscord) {
+                    append(" ${TextColors.brightBlue("new(?)")}")
+                }
+
+                if (canReportWithDiscord) {
+                    append(", report with: $styledCommand")
+                }
+            }
+        }
     } catch (e: NotImplementedError) {
         logger.error(e = null, puzzle) { "not implemented" }
     } catch (e: AocDay.DayNotReleasedException) {
