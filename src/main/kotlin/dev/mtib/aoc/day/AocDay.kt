@@ -361,6 +361,19 @@ open class AocDay(
         return inputArray[y * lineLength + x + y]
     }
 
+    fun getChar(pair: Pair<Int, Int>): Char {
+        return inputArray[pair.second * lineLength + pair.first + pair.second]
+    }
+
+    fun getCharOrNull(pair: Pair<Int, Int>): Char? {
+        val index = pair.second * lineLength + pair.first + pair.second
+        if (index < 0 || index >= inputArray.size) {
+            return null
+        }
+        return inputArray[index]
+    }
+
+
     private var _inputLinesList: List<String>? = null
     val inputLinesList: List<String>
         get() = _inputLinesList ?: input.lines().also {
@@ -373,8 +386,20 @@ open class AocDay(
             _inputLinesArray = it
         }
 
+    suspend fun part1(fakeInput: String): Any {
+        return withInput(fakeInput) {
+            part1()
+        }
+    }
+
     override suspend fun part1(): Any {
         throw NotImplementedError()
+    }
+
+    suspend fun part2(fakeInput: String): Any {
+        return withInput(fakeInput) {
+            part2()
+        }
     }
 
     override suspend fun part2(): Any {
