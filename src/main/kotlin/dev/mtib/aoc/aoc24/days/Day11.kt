@@ -1,8 +1,15 @@
 package dev.mtib.aoc.aoc24.days
 
 import dev.mtib.aoc.day.AocDay
+import dev.mtib.aoc.util.chunkedParLaunchZ
 import dev.mtib.aoc.util.chunkedParMap
+import dev.mtib.aoc.util.chunkedParMapZ
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.log10
 
 object Day11: AocDay(2024, 11) {
     class Bag private constructor(private val bag: MutableMap<Long, Long>) {
@@ -18,37 +25,90 @@ object Day11: AocDay(2024, 11) {
             it[0] = listOf(1L)
         }
 
-        suspend fun step(): Bag {
-            val updates = bag.entries.chunkedParMap(100) {
-                it.flatMap {current ->
-                    if (splitMap[current.key] != null) {
-                        return@flatMap splitMap[current.key]!!.map { it to current.value }
-                    }
+        private val powOfTens = ConcurrentHashMap<Int, Long>()
 
-                    // case of 1 handled by initialising map
+        suspend fun stepList(): Bag = coroutineScope {
+                val updates = bag.entries.toList().chunkedParMapZ(bag.size / cpu - 2) {
+                    it.map {current ->
+                        if (splitMap[current.key] != null) {
+                            return@map splitMap[current.key]!! to current.value
+                        }
 
-                    val string = current.key.toString()
-                    if (string.length % 2 == 0) {
-                        val first = string.substring(0, string.length / 2).toLong()
-                        val second = string.substring(string.length / 2).toLong()
-                        val retval = listOf(first, second)
+                        // case of 1 handled by initialising map
+
+                        val string = current.key.toString()
+                        val digits = log10(current.key.toDouble()).toInt() + 1
+                        if (digits % 2 == 0) {
+                            val powOfTen = powOfTens.getOrPut(digits / 2) { List(digits / 2) { 10L }.reduce { acc, i -> acc * i } }
+                            val first = current.key / powOfTen
+                            val second = current.key % powOfTen
+                            val retval = listOf(first, second)
+                            splitMap[current.key] = retval
+                            return@map retval to current.value
+                        }
+
+                        val retval = listOf(current.key * 2024)
                         splitMap[current.key] = retval
-                        return@flatMap retval.map { it to current.value }
+                        return@map retval to current.value
                     }
-
-                    val retval = listOf(current.key * 2024)
-                    splitMap[current.key] = retval
-                    return@flatMap retval.map { it to current.value }
                 }
-            }.flatten()
 
             bag.clear()
 
-            updates.forEach { (key, value) ->
-                bag[key] = bag.getOrDefault(key, 0) + value
+            for (chunk in updates) {
+                for ((keys, value) in chunk) {
+                    for (key in keys) {
+                        bag[key] = bag.getOrDefault(key, 0) + value
+                    }
+                }
             }
 
-            return this
+            return@coroutineScope this@Bag
+        }
+
+        suspend fun stepChannel(): Bag = coroutineScope {
+            val entries = bag.entries.toList()
+            val updateChannel = Channel<Pair<List<Long>, Long>>(Channel.UNLIMITED)
+            launch {
+                entries.chunkedParLaunchZ(entries.size / cpu - 2) {
+                    it.forEach {current ->
+                        if (splitMap[current.key] != null) {
+                            updateChannel.send(splitMap[current.key]!! to current.value)
+                            return@forEach
+                        }
+
+                        // case of 1 handled by initialising map
+
+                        val string = current.key.toString()
+                        val digits = log10(current.key.toDouble()).toInt() + 1
+                        if (digits % 2 == 0) {
+                            val powOfTen = powOfTens.getOrPut(digits / 2) { List(digits / 2) { 10L }.reduce { acc, i -> acc * i } }
+                            val first = current.key / powOfTen
+                            val second = current.key % powOfTen
+                            val retval = listOf(first, second)
+                            splitMap[current.key] = retval
+                            updateChannel.send(retval to current.value)
+                            return@forEach
+                        }
+
+                        val retval = listOf(current.key * 2024)
+                        splitMap[current.key] = retval
+                        updateChannel.send(retval to current.value)
+                        return@forEach
+                    }
+                }.joinAll()
+                updateChannel.close()
+            }
+
+            bag.clear()
+
+            for ((keys, value) in updateChannel) {
+                for (key in keys) {
+                    bag[key] = bag.getOrDefault(key, 0) + value
+                }
+            }
+
+            return@coroutineScope this@Bag
         }
 
         fun count(): Long = bag.values.sum()
@@ -58,7 +118,7 @@ object Day11: AocDay(2024, 11) {
         val state = Bag(input.split(" ").map{ it.toLong() })
 
         repeat(25) {
-            state.step()
+            state.stepList()
         }
 
         return state.count()
@@ -68,7 +128,7 @@ object Day11: AocDay(2024, 11) {
         val state = Bag(input.split(" ").map{ it.toLong() })
 
         repeat(75) {
-            state.step()
+            state.stepList()
         }
 
         return state.count()

@@ -35,22 +35,22 @@ class Day11Test : FunSpec({
             }
         }
         test("0 to 1") {
-            Day11.Bag(listOf(0)).step().count() shouldBe 1L
+            Day11.Bag(listOf(0)).stepChannel().count() shouldBe 1L
         }
         test("1 to 2024") {
-            Day11.Bag(listOf(1)).step().count() shouldBe 1L
+            Day11.Bag(listOf(1)).stepChannel().count() shouldBe 1L
         }
         test("1,2 to 2024,4048") {
-            Day11.Bag(listOf(1, 2)).step().count() shouldBe 2L
+            Day11.Bag(listOf(1, 2)).stepChannel().count() shouldBe 2L
         }
         test("10 to (1, 0)") {
-            Day11.Bag(listOf(10)).step().count() shouldBe 2L
+            Day11.Bag(listOf(10)).stepChannel().count() shouldBe 2L
         }
         test("10:2 to (1:2, 0:2)") {
-            Day11.Bag(listOf(10, 10)).step().count() shouldBe 4L
+            Day11.Bag(listOf(10, 10)).stepChannel().count() shouldBe 4L
         }
         test("10:2 to (1:2, 0:2)") {
-            Day11.Bag(listOf(10, 10)).step().count() shouldBe 4L
+            Day11.Bag(listOf(10, 10)).stepChannel().count() shouldBe 4L
         }
     }
     context("part2") {
