@@ -26,7 +26,7 @@ class Day7Test : FunSpec({
 
         test("example") {
             Day7.withInput(snippet0) {
-                Day7.part1() shouldBe 3749.toBigInteger()
+                Day7.part1() shouldBe 3749L
             }
         }
     }
@@ -40,7 +40,7 @@ class Day7Test : FunSpec({
         }
         test("example") {
             Day7.withInput(snippet0) {
-                Day7.part2() shouldBe 11387.toBigInteger()
+                Day7.part2() shouldBe 11387L
             }
         }
     }

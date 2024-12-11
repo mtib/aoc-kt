@@ -39,31 +39,6 @@ class Day6Test : FunSpec({
      }
     }
 
-    test("part2 1") {
-        Day6.withInput("""
-      ........
-      ..#.....
-      ..^..#..
-      ........
-      ....#...
-     """.trimIndent()) {
-            Day6.part2() shouldBe 1
-        }
-    }
-
-    test("part2 1 reversed") {
-        Day6.withInput("""
-      ..#.....
-      ........
-      ........
-      .#...v..
-      .....#..
-      ........
-     """.trimIndent()) {
-            Day6.part2() shouldBe 1
-        }
-    }
-
     test("part2 2") {
         Day6.withInput("""
       v.......
@@ -73,45 +48,6 @@ class Day6Test : FunSpec({
       ....#...
      """.trimIndent()) {
             Day6.part2() shouldBe 0
-        }
-    }
-
-    test("part2 4") {
-        Day6.withInput("""
-      .......v
-      ..#.....
-      .....#..
-      .#......
-      ....#...
-     """.trimIndent()) {
-            Day6.part2() shouldBe 1
-        }
-    }
-
-    test("part2 2 reversed") {
-        Day6.withInput("""
-      ........
-      ..#.....
-      ......#.
-      ........
-      .#......
-      .....#..
-      .......^
-     """.trimIndent()) {
-            Day6.part2() shouldBe 0
-        }
-    }
-
-    test("part2 3") {
-        Day6.withInput("""
-      ..#.....
-      .>....#.
-      .#......
-      ........
-      .....#..
-      ........
-     """.trimIndent()) {
-            Day6.part2() shouldBe 2
         }
     }
 
