@@ -8,24 +8,12 @@ import dev.mtib.aoc.benchmark.BenchmarkProgressPlotter
 import dev.mtib.aoc.benchmark.BenchmarkWindowPlotter
 import dev.mtib.aoc.day.AocDay
 import dev.mtib.aoc.day.PuzzleExecutor
-import dev.mtib.aoc.util.AocLogger
+import dev.mtib.aoc.util.*
 import dev.mtib.aoc.util.AocLogger.Companion.error
-import dev.mtib.aoc.util.Day
-import dev.mtib.aoc.util.PuzzleIdentity
-import dev.mtib.aoc.util.Results
 import dev.mtib.aoc.util.Results.BenchmarkResult
 import dev.mtib.aoc.util.Results.RunResult
-import dev.mtib.aoc.util.Year
-import dev.mtib.aoc.util.ciTimeout
-import dev.mtib.aoc.util.styleResult
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
+import kotlinx.coroutines.*
+import one.profiler.AsyncProfiler
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import kotlin.time.Duration
@@ -43,6 +31,7 @@ const val BENCHMARK_TIMEOUT_SECONDS = 5
 const val BENCHMARK_TIMEOUT_OVERRIDE_ENV = "BENCHMARK_TIMEOUT_SECONDS"
 
 var plotFlag = true
+var profileFlag = false
 
 suspend fun main(args: Array<String>) {
     logger.log(AocLogger.Main) { "starting advent of code" }
@@ -64,6 +53,10 @@ suspend fun main(args: Array<String>) {
                 return@forEach
             }
             when (arg) {
+                "--profile" -> {
+                    plotFlag = false
+                    profileFlag = true
+                }
                 "--no-plot" -> plotFlag = false
                 "all" -> addAll(AocDay.getAll().days())
                 "latest" -> AocDay.getAll(mostRecentYear).days().maxOrNull()?.also { add(it) }
@@ -107,9 +100,15 @@ suspend fun main(args: Array<String>) {
         }
     }
 
+    val profiler: AsyncProfiler? = (if(profileFlag) AsyncProfiler.getInstance() else null)?.also {
+        it.execute("start,jfr,event=cpu,file=./build/tmp/profile_%p.jfr")
+    }
+
     days.toList().sorted().forEach { day ->
         runDay(day)
     }
+
+    profiler?.execute("stop")
 
     Results.collect()
 

@@ -33,6 +33,8 @@ dependencies {
 
     implementation("com.github.ajalt.mordant:mordant:3.0.1")
 
+    implementation("tools.profiler:async-profiler:3.0")
+
     testImplementation(kotlin("test"))
     testImplementation("io.kotest:kotest-runner-junit5:5.9.0")
     testImplementation("io.kotest:kotest-assertions-core:5.9.0")
