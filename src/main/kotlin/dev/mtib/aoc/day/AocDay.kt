@@ -388,7 +388,10 @@ open class AocDay(
 
     suspend fun part1(fakeInput: String): Any {
         return withInput(fakeInput) {
-            part1()
+            partMode = 1
+            part1().also {
+                partMode = null
+            }
         }
     }
 
@@ -398,7 +401,10 @@ open class AocDay(
 
     suspend fun part2(fakeInput: String): Any {
         return withInput(fakeInput) {
-            part2()
+            partMode = 2
+            part2().also {
+                partMode = null
+            }
         }
     }
 
