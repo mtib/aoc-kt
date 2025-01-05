@@ -33,6 +33,7 @@ object AocDayLoader {
         Class.forName("dev.mtib.aoc.aoc24.days.Day12")
         Class.forName("dev.mtib.aoc.aoc24.days.Day13")
         Class.forName("dev.mtib.aoc.aoc24.days.Day2")
+        Class.forName("dev.mtib.aoc.aoc24.days.Day21")
         Class.forName("dev.mtib.aoc.aoc24.days.Day3")
         Class.forName("dev.mtib.aoc.aoc24.days.Day4")
         Class.forName("dev.mtib.aoc.aoc24.days.Day5")
@@ -74,6 +75,7 @@ object AocDayLoader {
         dev.mtib.aoc.aoc24.days.Day12,
         dev.mtib.aoc.aoc24.days.Day13,
         dev.mtib.aoc.aoc24.days.Day2,
+        dev.mtib.aoc.aoc24.days.Day21,
         dev.mtib.aoc.aoc24.days.Day3,
         dev.mtib.aoc.aoc24.days.Day4,
         dev.mtib.aoc.aoc24.days.Day5,

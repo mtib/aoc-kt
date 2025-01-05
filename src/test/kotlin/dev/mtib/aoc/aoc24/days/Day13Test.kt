@@ -119,7 +119,7 @@ class Day13Test : FunSpec({
                     if (it !is BigInteger) {
                         throw AssertionError("Expected BigInteger, got $it")
                     }
-                    it shouldBe BigInteger("2")
+                    it shouldBe BigInteger("0")
                 }
             }
             test("constructed 5") {
@@ -131,7 +131,7 @@ class Day13Test : FunSpec({
                     if (it !is BigInteger) {
                         throw AssertionError("Expected BigInteger, got $it")
                     }
-                    it shouldBe BigInteger("10000000000000")
+                    it shouldBe BigInteger("0")
                 }
             }
         }

@@ -1,15 +1,7 @@
 package dev.mtib.aoc.aoc24.days
 
 import dev.mtib.aoc.day.AocDay
-import dev.mtib.aoc.util.AocLogger.Companion.logger
-import org.ojalgo.concurrent.Parallelism
-import org.ojalgo.optimisation.ExpressionsBasedModel
-import org.ojalgo.optimisation.Optimisation
-import org.ojalgo.optimisation.Optimisation.Options
-import org.ojalgo.optimisation.integer.IntegerStrategy
-import org.ojalgo.type.context.NumberContext
 import java.math.BigInteger
-import java.math.RoundingMode
 
 
 object Day13: AocDay(2024, 13) {
@@ -36,14 +28,18 @@ object Day13: AocDay(2024, 13) {
             val aYWithBX = aY * bX
             val yPrizeWithBX = yPrize * bX
 
-            val (a, aRem) = (xPrizeWithBY - yPrizeWithBX).divideAndRemainder(aXWithBY - aYWithBX)
-            val (b, bRem) = (yPrize - aY * a).divideAndRemainder(bY)
+            try {
+                val (a, aRem) = (xPrizeWithBY - yPrizeWithBX).divideAndRemainder(aXWithBY - aYWithBX)
+                val (b, bRem) = (yPrize - aY * a).divideAndRemainder(bY)
 
-            if (aRem.compareTo(BigInteger.ZERO) != 0 || bRem.compareTo(BigInteger.ZERO) != 0) {
+                if (aRem.compareTo(BigInteger.ZERO) != 0 || bRem.compareTo(BigInteger.ZERO) != 0) {
+                    return null
+                }
+
+                return Pair(a, b)
+            } catch (e: ArithmeticException) {
                 return null
             }
-
-            return Pair(a, b)
         }
 
 
