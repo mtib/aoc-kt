@@ -27,57 +27,31 @@ object Day13: AocDay(2024, 13) {
             aMovement = aMovement,
             bMovement = bMovement
         )
-        private fun toModel(): ExpressionsBasedModel {
-            val options = Options()
-            options.integer(IntegerStrategy.newConfigurable().withParallelism(Parallelism.CORES))
-            options.solution = NumberContext.of(200, 200)
-            options.feasibility = NumberContext.of(100, 100)
-            val model = ExpressionsBasedModel(options)
+        private fun findIntersection(
+            aX: BigInteger, aY: BigInteger, bX: BigInteger, bY: BigInteger, xPrize: BigInteger, yPrize: BigInteger
+        ): Pair<BigInteger, BigInteger>? {
+            val aXWithBY = aX * bY
+            val xPrizeWithBY = xPrize * bY
 
-            val aPress = model.addVariable("aPress").integer().lower(0)
-            val bPress = model.addVariable("bPress").integer().lower(0)
+            val aYWithBX = aY * bX
+            val yPrizeWithBX = yPrize * bX
 
-            val cost = model.addExpression("cost")
-            cost.set(aPress, BigInteger("3"))
-            cost.set(bPress, BigInteger("1"))
-            cost.weight(1)
+            val (a, aRem) = (xPrizeWithBY - yPrizeWithBX).divideAndRemainder(aXWithBY - aYWithBX)
+            val (b, bRem) = (yPrize - aY * a).divideAndRemainder(bY)
 
-            val xMatch = model.addExpression("xMatch").lower(target.first).upper(target.first)
-            xMatch.set(aPress, aMovement.first)
-            xMatch.set(bPress, bMovement.first)
-
-            val yMatch = model.addExpression("yMatch").lower(target.second).upper(target.second)
-            yMatch.set(aPress, aMovement.second)
-            yMatch.set(bPress, bMovement.second)
-
-            return model
-        }
-
-        fun solve(): BigInteger? {
-            val model = toModel()
-            val result: Optimisation.Result? = run {
-                for (i in 1..(if (partMode == 2) 10 else 1)) {
-                    val result = model.minimise()
-                    if (result.state.isFeasible) {
-                        if (i > 1) {
-                            logger.log { "found solution after ${i} iterations" }
-                        }
-                        if (model.validate(result)) {
-                            return@run result
-                        }
-                    }
-                }
-                null
-            }
-
-            if (result == null) {
+            if (aRem.compareTo(BigInteger.ZERO) != 0 || bRem.compareTo(BigInteger.ZERO) != 0) {
                 return null
             }
 
-            val aPress = model.variables.find { it.name == "aPress" }!!
-            val bPress = model.variables.find { it.name == "bPress" }!!
+            return Pair(a, b)
+        }
 
-            return aPress.value.toBigIntegerExact().multiply(BigInteger("3")) + bPress.value.toBigIntegerExact()
+
+        fun solve(): BigInteger? {
+            val (aPress, bPress) = findIntersection(
+                aMovement.first, aMovement.second, bMovement.first, bMovement.second, target.first, target.second
+            ) ?: return null
+            return aPress.multiply(BigInteger("3")) + bPress
         }
     }
 
@@ -133,10 +107,6 @@ object Day13: AocDay(2024, 13) {
     }
 
     override suspend fun part2(): BigInteger {
-        not(465116279064, Hint.Direction.TooLow)
-        not(57928637781847, Hint.Direction.TooLow)
-        not(81122608248687, Hint.Direction.TooHigh)
-        not(80657109890803)
         return getClawMachines().mapNotNull { it.adjusted().solve() }.fold(BigInteger.ZERO, BigInteger::add)
     }
 }
